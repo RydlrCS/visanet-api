@@ -6,7 +6,7 @@ const logger = require('../utils/logger');
  * Authentication middleware
  * Verifies JWT token and attaches user to request
  */
-module.exports = async (req, res, next) => {
+module.exports = async(req, res, next) => {
   try {
     // Get token from header
     const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -31,11 +31,11 @@ module.exports = async (req, res, next) => {
 
   } catch (error) {
     logger.error('Auth middleware error:', error);
-    
+
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({ message: 'Token is not valid' });
     }
-    
+
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({ message: 'Token has expired' });
     }

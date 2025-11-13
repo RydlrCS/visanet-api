@@ -1,17 +1,17 @@
 const mongoose = require('mongoose');
 const logger = require('../utils/logger');
 
-const connectDB = async () => {
+const connectDB = async() => {
   try {
     const options = {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
+      socketTimeoutMS: 45000
     };
 
     await mongoose.connect(process.env.MONGODB_URI, options);
-    
+
     logger.info('MongoDB Connected Successfully');
     console.log('✅ Database connected');
 

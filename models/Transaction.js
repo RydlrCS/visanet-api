@@ -57,7 +57,7 @@ const transactionSchema = new mongoose.Schema({
   errorDetails: {
     errorCode: String,
     errorMessage: String,
-    errorDetails: String
+    errorDetails: mongoose.Schema.Types.Mixed
   },
   timestamps: {
     initiated: {
@@ -81,7 +81,7 @@ const transactionSchema = new mongoose.Schema({
 
 // Indexes for better query performance
 transactionSchema.index({ userId: 1, createdAt: -1 });
-transactionSchema.index({ transactionId: 1 });
+// transactionId already has unique: true in schema, no need for additional index
 transactionSchema.index({ visaTransactionId: 1 });
 transactionSchema.index({ status: 1 });
 

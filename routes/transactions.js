@@ -16,7 +16,7 @@ router.post('/push', [
   body('amount').isNumeric().withMessage('Amount must be a number'),
   body('recipientCard').notEmpty().withMessage('Recipient card is required'),
   body('currency').optional().isISO4217().withMessage('Invalid currency code')
-], async (req, res) => {
+], async(req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -90,10 +90,10 @@ router.post('/push', [
 
   } catch (error) {
     logger.error('Push payment error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       message: 'Internal server error',
-      error: error.message 
+      error: error.message
     });
   }
 });
@@ -107,7 +107,7 @@ router.post('/pull', [
   auth,
   body('amount').isNumeric().withMessage('Amount must be a number'),
   body('senderCard').notEmpty().withMessage('Sender card is required')
-], async (req, res) => {
+], async(req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -177,10 +177,10 @@ router.post('/pull', [
 
   } catch (error) {
     logger.error('Pull funds error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       message: 'Internal server error',
-      error: error.message 
+      error: error.message
     });
   }
 });
@@ -190,7 +190,7 @@ router.post('/pull', [
  * @desc    Get user transactions
  * @access  Private
  */
-router.get('/', auth, async (req, res) => {
+router.get('/', auth, async(req, res) => {
   try {
     const { page = 1, limit = 20, status, type } = req.query;
 
@@ -224,7 +224,7 @@ router.get('/', auth, async (req, res) => {
  * @desc    Get transaction by ID
  * @access  Private
  */
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', auth, async(req, res) => {
   try {
     const transaction = await Transaction.findOne({
       _id: req.params.id,

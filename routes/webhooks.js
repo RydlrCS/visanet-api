@@ -8,7 +8,7 @@ const logger = require('../utils/logger');
  * Webhook endpoint for Visa notifications
  * URL: https://www.locapay.rydlr.com/visanet/webhook
  */
-router.post('/', async (req, res) => {
+router.post('/', async(req, res) => {
   try {
     logger.info('Webhook received:', req.body);
 
@@ -27,19 +27,21 @@ router.post('/', async (req, res) => {
       data
     } = req.body;
 
+    logger.info('Webhook event received:', { transactionId, status, eventType, timestamp });
+
     // Process webhook based on event type
     switch (eventType) {
-      case 'TRANSACTION_COMPLETED':
-        await handleTransactionCompleted(data);
-        break;
-      case 'TRANSACTION_FAILED':
-        await handleTransactionFailed(data);
-        break;
-      case 'TRANSACTION_REVERSED':
-        await handleTransactionReversed(data);
-        break;
-      default:
-        logger.warn('Unknown webhook event type:', eventType);
+    case 'TRANSACTION_COMPLETED':
+      await handleTransactionCompleted(data);
+      break;
+    case 'TRANSACTION_FAILED':
+      await handleTransactionFailed(data);
+      break;
+    case 'TRANSACTION_REVERSED':
+      await handleTransactionReversed(data);
+      break;
+    default:
+      logger.warn('Unknown webhook event type:', eventType);
     }
 
     // Log webhook notification
@@ -54,7 +56,7 @@ router.post('/', async (req, res) => {
     }
 
     // Acknowledge receipt
-    res.status(200).json({ 
+    res.status(200).json({
       received: true,
       transactionId,
       timestamp: new Date().toISOString()
@@ -76,7 +78,7 @@ function verifySignature(payload, signature) {
 
   const hmac = crypto.createHmac('sha256', process.env.WEBHOOK_SECRET);
   const calculatedSignature = hmac.update(JSON.stringify(payload)).digest('hex');
-  
+
   return crypto.timingSafeEqual(
     Buffer.from(signature),
     Buffer.from(calculatedSignature)
@@ -87,8 +89,8 @@ function verifySignature(payload, signature) {
  * Handle transaction completed
  */
 async function handleTransactionCompleted(data) {
-  const transaction = await Transaction.findOne({ 
-    transactionId: data.transactionId 
+  const transaction = await Transaction.findOne({
+    transactionId: data.transactionId
   });
 
   if (transaction) {
@@ -98,7 +100,7 @@ async function handleTransactionCompleted(data) {
     await transaction.save();
 
     logger.info('Transaction completed:', data.transactionId);
-    
+
     // TODO: Notify user (email/SMS)
   }
 }
@@ -107,8 +109,8 @@ async function handleTransactionCompleted(data) {
  * Handle transaction failed
  */
 async function handleTransactionFailed(data) {
-  const transaction = await Transaction.findOne({ 
-    transactionId: data.transactionId 
+  const transaction = await Transaction.findOne({
+    transactionId: data.transactionId
   });
 
   if (transaction) {
@@ -122,7 +124,7 @@ async function handleTransactionFailed(data) {
     await transaction.save();
 
     logger.error('Transaction failed:', data.transactionId, data.errorMessage);
-    
+
     // TODO: Notify user (email/SMS)
   }
 }
@@ -131,8 +133,8 @@ async function handleTransactionFailed(data) {
  * Handle transaction reversed
  */
 async function handleTransactionReversed(data) {
-  const transaction = await Transaction.findOne({ 
-    transactionId: data.transactionId 
+  const transaction = await Transaction.findOne({
+    transactionId: data.transactionId
   });
 
   if (transaction) {
@@ -141,7 +143,7 @@ async function handleTransactionReversed(data) {
     await transaction.save();
 
     logger.info('Transaction reversed:', data.transactionId);
-    
+
     // TODO: Notify user (email/SMS)
   }
 }

@@ -9,7 +9,7 @@ const logger = require('../utils/logger');
  * @desc    Get user profile
  * @access  Private
  */
-router.get('/profile', auth, async (req, res) => {
+router.get('/profile', auth, async(req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
     res.json(user);
@@ -24,7 +24,7 @@ router.get('/profile', auth, async (req, res) => {
  * @desc    Update user profile
  * @access  Private
  */
-router.put('/profile', auth, async (req, res) => {
+router.put('/profile', auth, async(req, res) => {
   try {
     const { firstName, lastName, phoneNumber, address } = req.body;
 
@@ -56,14 +56,14 @@ router.put('/profile', auth, async (req, res) => {
  * @desc    Submit KYC information
  * @access  Private
  */
-router.post('/kyc', auth, async (req, res) => {
+router.post('/kyc', auth, async(req, res) => {
   try {
-    const { 
-      dateOfBirth, 
-      ssn, 
-      idType, 
-      idNumber, 
-      occupation 
+    const {
+      dateOfBirth,
+      ssn,
+      idType,
+      idNumber,
+      occupation
     } = req.body;
 
     const user = await User.findById(req.user.id);
@@ -99,10 +99,10 @@ router.post('/kyc', auth, async (req, res) => {
  * @desc    Get KYC status
  * @access  Private
  */
-router.get('/kyc-status', auth, async (req, res) => {
+router.get('/kyc-status', auth, async(req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    
+
     res.json({
       kycStatus: user.kycStatus,
       visaCustomerId: user.visaCustomerId

@@ -7,7 +7,7 @@ class VisaConfig {
     this.userId = process.env.VISA_USER_ID;
     this.password = process.env.VISA_PASSWORD;
     this.baseURL = process.env.VISA_API_URL || 'https://sandbox.api.visa.com';
-    
+
     // Load certificates
     this.cert = this.loadCertificate(process.env.VISA_CERT_PATH);
     this.key = this.loadCertificate(process.env.VISA_KEY_PATH);

@@ -17,32 +17,30 @@ router.post('/', [
   body('expiryMonth').isInt({ min: 1, max: 12 }).withMessage('Invalid expiry month'),
   body('expiryYear').isInt({ min: new Date().getFullYear() }).withMessage('Invalid expiry year'),
   body('cvv').isLength({ min: 3, max: 4 }).withMessage('Invalid CVV')
-], async (req, res) => {
+], async(req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { 
-      cardNumber, 
-      cardholderName, 
-      expiryMonth, 
-      expiryYear, 
-      cvv,
+    const {
+      cardNumber,
+      cardholderName,
+      expiryMonth,
+      expiryYear,
+      cvv: _cvv,
       billingAddress,
-      isDefault 
-    } = req.body;
-
-    // Check if card already exists
+      isDefault
+    } = req.body;    // Check if card already exists
     const existingCard = await Card.findOne({
       userId: req.user.id,
       lastFourDigits: cardNumber.slice(-4)
     });
 
     if (existingCard) {
-      return res.status(400).json({ 
-        message: 'Card already exists' 
+      return res.status(400).json({
+        message: 'Card already exists'
       });
     }
 
@@ -65,10 +63,10 @@ router.post('/', [
 
     await card.save();
 
-    logger.info('Card added:', { 
-      userId: req.user.id, 
+    logger.info('Card added:', {
+      userId: req.user.id,
       cardId: card._id,
-      lastFour: card.lastFourDigits 
+      lastFour: card.lastFourDigits
     });
 
     res.status(201).json({
@@ -95,11 +93,11 @@ router.post('/', [
  * @desc    Get all user cards
  * @access  Private
  */
-router.get('/', auth, async (req, res) => {
+router.get('/', auth, async(req, res) => {
   try {
-    const cards = await Card.find({ 
+    const cards = await Card.find({
       userId: req.user.id,
-      isActive: true 
+      isActive: true
     }).select('-cardNumberEncrypted');
 
     res.json({
@@ -125,7 +123,7 @@ router.get('/', auth, async (req, res) => {
  * @desc    Get card by ID
  * @access  Private
  */
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', auth, async(req, res) => {
   try {
     const card = await Card.findOne({
       _id: req.params.id,
@@ -160,7 +158,7 @@ router.get('/:id', auth, async (req, res) => {
  * @desc    Set card as default
  * @access  Private
  */
-router.put('/:id/set-default', auth, async (req, res) => {
+router.put('/:id/set-default', auth, async(req, res) => {
   try {
     // Remove default from all cards
     await Card.updateMany(
@@ -179,9 +177,9 @@ router.put('/:id/set-default', auth, async (req, res) => {
       return res.status(404).json({ message: 'Card not found' });
     }
 
-    logger.info('Default card updated:', { 
-      userId: req.user.id, 
-      cardId: card._id 
+    logger.info('Default card updated:', {
+      userId: req.user.id,
+      cardId: card._id
     });
 
     res.json({
@@ -205,7 +203,7 @@ router.put('/:id/set-default', auth, async (req, res) => {
  * @desc    Delete card (soft delete)
  * @access  Private
  */
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', auth, async(req, res) => {
   try {
     const card = await Card.findOne({
       _id: req.params.id,
@@ -219,9 +217,9 @@ router.delete('/:id', auth, async (req, res) => {
     card.isActive = false;
     await card.save();
 
-    logger.info('Card deleted:', { 
-      userId: req.user.id, 
-      cardId: card._id 
+    logger.info('Card deleted:', {
+      userId: req.user.id,
+      cardId: card._id
     });
 
     res.json({

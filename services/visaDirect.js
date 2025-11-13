@@ -1,5 +1,4 @@
 const axios = require('axios');
-const { v4: uuidv4 } = require('uuid');
 const visaConfig = require('../config/visa');
 const logger = require('../utils/logger');
 
@@ -242,7 +241,7 @@ class VisaDirectService {
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     const seconds = String(now.getSeconds()).padStart(2, '0');
-    
+
     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
   }
 

@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
@@ -17,7 +16,7 @@ router.post('/register', [
   body('firstName').notEmpty().withMessage('First name is required'),
   body('lastName').notEmpty().withMessage('Last name is required'),
   body('phoneNumber').isMobilePhone().withMessage('Valid phone number is required')
-], async (req, res) => {
+], async(req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -87,7 +86,7 @@ router.post('/register', [
 router.post('/login', [
   body('email').isEmail().withMessage('Valid email is required'),
   body('password').notEmpty().withMessage('Password is required')
-], async (req, res) => {
+], async(req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -148,12 +147,13 @@ router.post('/login', [
 router.post('/verify-email', [
   body('email').isEmail(),
   body('code').notEmpty()
-], async (req, res) => {
+], async(req, res) => {
   try {
     const { email, code } = req.body;
 
     // TODO: Implement email verification logic
     // This would typically check a verification code sent via email
+    logger.info('Email verification requested:', { email, code: '***' });
 
     res.json({
       success: true,
@@ -173,16 +173,16 @@ router.post('/verify-email', [
  */
 router.post('/forgot-password', [
   body('email').isEmail()
-], async (req, res) => {
+], async(req, res) => {
   try {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
     if (!user) {
       // Don't reveal if user exists
-      return res.json({ 
-        success: true, 
-        message: 'If the email exists, a reset link has been sent' 
+      return res.json({
+        success: true,
+        message: 'If the email exists, a reset link has been sent'
       });
     }
 
@@ -208,11 +208,12 @@ router.post('/forgot-password', [
 router.post('/reset-password', [
   body('token').notEmpty(),
   body('password').isLength({ min: 8 })
-], async (req, res) => {
+], async(req, res) => {
   try {
     const { token, password } = req.body;
 
     // TODO: Verify reset token and update password
+    logger.info('Password reset requested with token:', { tokenLength: token?.length, passwordLength: password?.length });
 
     res.json({
       success: true,

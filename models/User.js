@@ -7,7 +7,13 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
     lowercase: true,
-    trim: true
+    trim: true,
+    validate: {
+      validator: function(v) {
+        return /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(v);
+      },
+      message: props => `${props.value} is not a valid email address!`
+    }
   },
   password: {
     type: String,
@@ -37,7 +43,7 @@ const userSchema = new mongoose.Schema({
   },
   kycStatus: {
     type: String,
-    enum: ['pending', 'verified', 'rejected'],
+    enum: ['pending', 'submitted', 'approved', 'rejected'],
     default: 'pending'
   },
   kycDocuments: [{
@@ -74,7 +80,7 @@ const userSchema = new mongoose.Schema({
 // Hash password before saving
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
-  
+
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
