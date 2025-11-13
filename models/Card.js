@@ -21,7 +21,14 @@ const cardSchema = new mongoose.Schema({
   },
   expiryMonth: {
     type: String,
-    required: true
+    required: true,
+    validate: {
+      validator: function(v) {
+        const month = parseInt(v, 10);
+        return month >= 1 && month <= 12;
+      },
+      message: props => `${props.value} is not a valid month (must be 01-12)`
+    }
   },
   expiryYear: {
     type: String,

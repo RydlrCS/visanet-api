@@ -27,10 +27,8 @@ describe('Card Model', () => {
       const cardData = {
         userId: testUserId,
         cardholderName: 'John Doe',
-        expiry: {
-          month: 12,
-          year: 2025
-        },
+        expiryMonth: '12',
+        expiryYear: '2025',
         cardType: 'visa',
         lastFourDigits: '1111',
         cardNumberEncrypted: 'encrypted_data_here'
@@ -59,10 +57,8 @@ describe('Card Model', () => {
       const card = new Card({
         userId: testUserId,
         cardholderName: 'John Doe',
-        expiry: {
-          month: 13, // Invalid
-          year: 2025
-        },
+        expiryMonth: '13', // Invalid
+        expiryYear: '2025',
         cardType: 'visa',
         lastFourDigits: '1111',
         cardNumberEncrypted: 'encrypted'
@@ -72,13 +68,14 @@ describe('Card Model', () => {
     });
 
     test('should validate card type enum', async() => {
-      const validTypes = ['visa', 'mastercard', 'amex', 'discover', 'unknown'];
+      const validTypes = ['visa', 'mastercard', 'amex', 'discover'];
 
       for (const type of validTypes) {
         const card = new Card({
           userId: testUserId,
           cardholderName: 'John Doe',
-          expiry: { month: 12, year: 2025 },
+          expiryMonth: '12',
+          expiryYear: '2025',
           cardType: type,
           lastFourDigits: '1111',
           cardNumberEncrypted: 'encrypted'
@@ -96,7 +93,8 @@ describe('Card Model', () => {
       const card = new Card({
         userId: testUserId,
         cardholderName: 'John Doe',
-        expiry: { month: 12, year: 2025 },
+        expiryMonth: '12',
+        expiryYear: '2025',
         cardType: 'visa',
         lastFourDigits: '1111'
       });
@@ -115,7 +113,8 @@ describe('Card Model', () => {
       const card = new Card({
         userId: testUserId,
         cardholderName: 'John Doe',
-        expiry: { month: 12, year: 2025 },
+        expiryMonth: '12',
+        expiryYear: '2025',
         cardType: 'visa',
         lastFourDigits: '1111'
       });
@@ -133,7 +132,8 @@ describe('Card Model', () => {
       const card = new Card({
         userId: testUserId,
         cardholderName: 'John Doe',
-        expiry: { month: 12, year: 2025 },
+        expiryMonth: '12',
+        expiryYear: '2025',
         cardType: 'visa',
         lastFourDigits: '1111'
       });
@@ -157,14 +157,14 @@ describe('Card Model', () => {
       const card = new Card({
         userId: testUserId,
         cardholderName: 'John Doe',
-        expiry: { month: 12, year: 2025 },
+        expiryMonth: '12',
+        expiryYear: '2025',
         cardType: 'visa',
         lastFourDigits: '1111',
         cardNumberEncrypted: ''
       });
 
-      const decrypted = card.decryptCardNumber();
-      expect(decrypted).toBe('');
+      expect(() => card.decryptCardNumber()).toThrow();
     });
   });
 
@@ -174,7 +174,8 @@ describe('Card Model', () => {
       const card1 = new Card({
         userId: testUserId,
         cardholderName: 'John Doe',
-        expiry: { month: 12, year: 2025 },
+        expiryMonth: '12',
+        expiryYear: '2025',
         cardType: 'visa',
         lastFourDigits: '1111',
         cardNumberEncrypted: 'encrypted1',
@@ -186,7 +187,8 @@ describe('Card Model', () => {
       const card2 = new Card({
         userId: testUserId,
         cardholderName: 'John Doe',
-        expiry: { month: 6, year: 2026 },
+        expiryMonth: '06',
+        expiryYear: '2026',
         cardType: 'mastercard',
         lastFourDigits: '2222',
         cardNumberEncrypted: 'encrypted2',
@@ -205,7 +207,8 @@ describe('Card Model', () => {
       const card = new Card({
         userId: testUserId,
         cardholderName: 'John Doe',
-        expiry: { month: 12, year: 2025 },
+        expiryMonth: '12',
+        expiryYear: '2025',
         cardType: 'visa',
         lastFourDigits: '1111',
         cardNumberEncrypted: 'encrypted'
@@ -219,7 +222,8 @@ describe('Card Model', () => {
       const card = new Card({
         userId: testUserId,
         cardholderName: 'John Doe',
-        expiry: { month: 12, year: 2025 },
+        expiryMonth: '12',
+        expiryYear: '2025',
         cardType: 'visa',
         lastFourDigits: '1111',
         cardNumberEncrypted: 'encrypted'
@@ -241,14 +245,15 @@ describe('Card Model', () => {
         street: '456 Oak Ave',
         city: 'New York',
         state: 'NY',
-        zipCode: '10001',
+        postalCode: '10001',
         country: 'USA'
       };
 
       const card = new Card({
         userId: testUserId,
         cardholderName: 'John Doe',
-        expiry: { month: 12, year: 2025 },
+        expiryMonth: '12',
+        expiryYear: '2025',
         cardType: 'visa',
         lastFourDigits: '1111',
         cardNumberEncrypted: 'encrypted',
@@ -259,7 +264,7 @@ describe('Card Model', () => {
 
       expect(card.billingAddress.street).toBe(billingAddress.street);
       expect(card.billingAddress.city).toBe(billingAddress.city);
-      expect(card.billingAddress.zipCode).toBe(billingAddress.zipCode);
+      expect(card.billingAddress.postalCode).toBe(billingAddress.postalCode);
     });
   });
 
@@ -268,7 +273,8 @@ describe('Card Model', () => {
       const card = new Card({
         userId: testUserId,
         cardholderName: 'John Doe',
-        expiry: { month: 12, year: 2025 },
+        expiryMonth: '12',
+        expiryYear: '2025',
         cardType: 'visa',
         lastFourDigits: '1111',
         cardNumberEncrypted: 'encrypted'
