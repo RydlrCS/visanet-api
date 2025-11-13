@@ -32,9 +32,15 @@ class VisaConfig {
     return new https.Agent({
       cert: this.cert,
       key: this.key,
-      ca: this.ca,
-      rejectUnauthorized: process.env.NODE_ENV === 'production'
+      // Using Node.js default CA bundle (includes DigiCert for Visa servers)
+      // ca: this.ca,  // Not needed - system CAs work for Visa sandbox/production
+      rejectUnauthorized: true  // Always validate in production
     });
+  }
+
+  // Alias for backwards compatibility
+  createHttpsAgent() {
+    return this.getHttpsAgent();
   }
 
   getAuthHeader() {

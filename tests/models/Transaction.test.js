@@ -354,7 +354,7 @@ describe('Transaction Model', () => {
   describe('Indexes', () => {
     test('should have indexes defined in schema', () => {
       const indexes = Transaction.schema.indexes();
-      
+
       // Check that indexes are defined (they'll be created when the model is used)
       expect(indexes.length).toBeGreaterThan(0);
       expect(indexes.some(idx => idx[0].userId && idx[0].createdAt)).toBe(true);

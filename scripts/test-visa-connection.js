@@ -44,17 +44,17 @@ function checkFile(filePath, name) {
     log(`✗ ${name} not found at: ${fullPath}`, 'red');
     return false;
   }
-  
+
   const stats = fs.statSync(fullPath);
   const permissions = (stats.mode & parseInt('777', 8)).toString(8);
-  
+
   if (permissions !== '600') {
     log(`⚠ ${name} has permissions ${permissions}, should be 600`, 'yellow');
     log(`  Run: chmod 600 ${filePath}`, 'cyan');
   } else {
     log(`✓ ${name} found with correct permissions`, 'green');
   }
-  
+
   return true;
 }
 
@@ -106,7 +106,7 @@ async function testVisaConnection() {
 
   // Step 3: Test API connection
   log('Step 3: Testing Visa API Connection...', 'blue');
-  
+
   try {
     // Read certificates
     const cert = fs.readFileSync(path.resolve(process.env.VISA_CERT_PATH));
@@ -142,10 +142,10 @@ async function testVisaConnection() {
     };
 
     log(`Testing connection to: ${process.env.VISA_API_URL}`, 'cyan');
-    
+
     const req = https.request(options, (res) => {
       log(`Response Status: ${res.statusCode}`, res.statusCode === 200 ? 'green' : 'yellow');
-      
+
       let data = '';
       res.on('data', (chunk) => {
         data += chunk;
@@ -195,7 +195,7 @@ async function testVisaConnection() {
     req.on('error', (error) => {
       log('\n✗ Connection failed', 'red');
       log(`Error: ${error.message}`, 'red');
-      
+
       if (error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
         log('\nPossible causes:', 'yellow');
         log('- CA certificate is incorrect', 'yellow');
@@ -210,7 +210,7 @@ async function testVisaConnection() {
         log('- Certificate file permissions are too restrictive', 'yellow');
         log('- Run: chmod 600 ./certs/*.pem', 'cyan');
       }
-      
+
       log('\nSee VISA_SETUP_GUIDE.md for troubleshooting\n', 'cyan');
       process.exit(1);
     });
@@ -220,12 +220,12 @@ async function testVisaConnection() {
   } catch (error) {
     log('\n✗ Test failed', 'red');
     log(`Error: ${error.message}`, 'red');
-    
+
     if (error.code === 'ENOENT') {
       log('\nCertificate file not found', 'yellow');
       log('Download certificates from Visa Developer Portal', 'cyan');
     }
-    
+
     log('See VISA_SETUP_GUIDE.md for help\n', 'cyan');
     process.exit(1);
   }
