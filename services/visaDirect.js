@@ -2,6 +2,7 @@ const https = require('https');
 const config = require('../config/visa');
 const logger = require('../utils/logger');
 const xpay = require('../utils/xpay');
+const mle = require('../utils/mle');
 
 /**
  * Visa Direct Service - API Client for Visa Direct Fund Transfers
@@ -13,13 +14,53 @@ const xpay = require('../utils/xpay');
  * - Reverse Funds Transaction (AFTR - Account Funding Transaction Reversal)
  * - Transaction Status Query
  *
+ * Security Layers:
+ * 1. Mutual TLS: Client certificate authentication
+ * 2. X-Pay-Token: HMAC-SHA256 request signing (if configured)
+ * 3. MLE: End-to-end payload encryption for sensitive card data
+ *
+ * MLE Configuration:
+ * - Key ID: VISA_DIRECT_MLE_KEY_ID (from .env)
+ * - Client Certificate: VISA_DIRECT_MLE_CLIENT_CERT
+ * - Server Certificate: VISA_DIRECT_MLE_SERVER_CERT (Visa's public key)
+ * - Private Key: VISA_DIRECT_MLE_PRIVATE_KEY
+ * - Algorithm: RSA-OAEP with SHA-256
+ * - Config Type: 'visaDirect'
+ *
  * @see docs/VISA_DIRECT_API_FIELDS.md for detailed field reference
  */
 class VisaDirectService {
+  /**
+   * Initialize Visa Direct service with MLE encryption support
+   *
+   * The constructor:
+   * 1. Sets up HTTPS agent with mutual TLS certificates
+   * 2. Verifies MLE configuration for Visa Direct
+   * 3. Logs MLE status (enabled/disabled with reasons)
+   * 4. Configures default card acceptor information
+   *
+   * @constructor
+   */
   constructor() {
+    logger.info('[VisaDirect] Initializing Visa Direct service');
     this.baseURL = process.env.VISA_URL || 'https://sandbox.api.visa.com';
     this.agent = config.createHttpsAgent();
     this.useXPayToken = process.env.VISA_SHARED_SECRET ? true : false;
+
+    // Verify MLE configuration for Visa Direct
+    const mleStatus = mle.verifyConfiguration('visaDirect');
+    if (mleStatus.configured) {
+      logger.info('[VisaDirect] MLE encryption enabled', {
+        keyId: process.env.VISA_DIRECT_MLE_KEY_ID,
+        algorithm: 'RSA-OAEP-SHA256'
+      });
+      this.useMLE = true;
+    } else {
+      logger.warn('[VisaDirect] MLE encryption not configured - sensitive data will be sent in plain text', {
+        errors: mleStatus.errors
+      });
+      this.useMLE = false;
+    }
 
     // Default card acceptor information (should match enrollment data)
     this.defaultCardAcceptor = {
@@ -180,9 +221,14 @@ class VisaDirectService {
    * Push Funds Transaction (OCT - Original Credit Transaction)
    * Send money to a recipient's Visa card
    *
+   * Security:
+   * - If MLE is configured, recipient PAN will be encrypted using Visa Direct MLE config
+   * - Encrypted data replaces plain PAN in the request
+   * - Falls back to plain text if encryption fails (with warning logged)
+   *
    * @param {object} params - Transaction parameters
    * @param {number} params.amount - Transaction amount (max 999999999.999)
-   * @param {string} params.recipientPAN - Recipient card number (13-19 digits)
+   * @param {string} params.recipientPAN - Recipient card number (13-19 digits) - will be encrypted if MLE enabled
    * @param {string} params.currency - Currency code (e.g., 'USD', 'EUR')
    * @param {string} params.businessApplicationId - Business application ID (AA, PP, FD, etc.)
    * @param {object} params.sender - Sender information (conditional based on business type)
@@ -215,6 +261,46 @@ class VisaDirectService {
       const systemsTraceAuditNumber = this.generateSystemsTraceAuditNumber();
       const retrievalReferenceNumber = this.generateRetrievalReferenceNumber(systemsTraceAuditNumber);
 
+      // Encrypt sensitive card data if MLE is enabled
+      let recipientPANForRequest = recipientPAN;
+      let encryptedData = null;
+
+      if (this.useMLE) {
+        logger.info('[VisaDirect] Encrypting recipient card data with MLE', {
+          systemsTraceAuditNumber,
+          retrievalReferenceNumber,
+          configType: 'visaDirect'
+        });
+
+        try {
+          encryptedData = mle.encrypt(
+            {
+              recipientPrimaryAccountNumber: recipientPAN
+            },
+            'visaDirect'
+          );
+
+          logger.info('[VisaDirect] Card data encrypted successfully', {
+            encryptedDataSize: encryptedData.encryptedData?.length || 0,
+            keyId: encryptedData.encryptionKeyId,
+            systemsTraceAuditNumber
+          });
+
+          // Use encrypted data field instead of plain PAN
+          recipientPANForRequest = null;
+        } catch (encryptError) {
+          logger.error('[VisaDirect] MLE encryption failed, falling back to plain text', {
+            error: encryptError.message,
+            systemsTraceAuditNumber
+          });
+          // Fall back to plain PAN if encryption fails
+        }
+      } else {
+        logger.warn('[VisaDirect] Sending recipient PAN in plain text - MLE not configured', {
+          systemsTraceAuditNumber
+        });
+      }
+
       // Build payload according to Visa Direct API specification
       const payload = {
         // Required fields
@@ -224,7 +310,8 @@ class VisaDirectService {
         businessApplicationId,
         cardAcceptor: cardAcceptor || this.defaultCardAcceptor,
         localTransactionDateTime: this.getLocalTransactionDateTime(),
-        recipientPrimaryAccountNumber: recipientPAN,
+        ...(recipientPANForRequest && { recipientPrimaryAccountNumber: recipientPANForRequest }),
+        ...(encryptedData && { encryptedData: encryptedData.encryptedData }),
         retrievalReferenceNumber,
         systemsTraceAuditNumber,
         transactionCurrencyCode: currency,
@@ -316,9 +403,14 @@ class VisaDirectService {
    * Pull Funds Transaction (AFT - Account Funding Transaction)
    * Request money from a sender's Visa card
    *
+   * Security:
+   * - If MLE is configured, sender PAN will be encrypted using Visa Direct MLE config
+   * - Encrypted data replaces plain PAN in the request
+   * - Falls back to plain text if encryption fails (with warning logged)
+   *
    * @param {object} params - Transaction parameters
    * @param {number} params.amount - Transaction amount
-   * @param {string} params.senderPAN - Sender card number (13-19 digits)
+   * @param {string} params.senderPAN - Sender card number (13-19 digits) - will be encrypted if MLE enabled
    * @param {string} params.currency - Currency code
    * @param {string} params.businessApplicationId - Business application ID
    * @param {object} params.sender - Sender information
@@ -346,6 +438,46 @@ class VisaDirectService {
       const systemsTraceAuditNumber = this.generateSystemsTraceAuditNumber();
       const retrievalReferenceNumber = this.generateRetrievalReferenceNumber(systemsTraceAuditNumber);
 
+      // Encrypt sensitive card data if MLE is enabled
+      let senderPANForRequest = senderPAN;
+      let encryptedData = null;
+
+      if (this.useMLE) {
+        logger.info('[VisaDirect] Encrypting sender card data with MLE', {
+          systemsTraceAuditNumber,
+          retrievalReferenceNumber,
+          configType: 'visaDirect'
+        });
+
+        try {
+          encryptedData = mle.encrypt(
+            {
+              senderPrimaryAccountNumber: senderPAN
+            },
+            'visaDirect'
+          );
+
+          logger.info('[VisaDirect] Card data encrypted successfully', {
+            encryptedDataSize: encryptedData.encryptedData?.length || 0,
+            keyId: encryptedData.encryptionKeyId,
+            systemsTraceAuditNumber
+          });
+
+          // Use encrypted data field instead of plain PAN
+          senderPANForRequest = null;
+        } catch (encryptError) {
+          logger.error('[VisaDirect] MLE encryption failed, falling back to plain text', {
+            error: encryptError.message,
+            systemsTraceAuditNumber
+          });
+          // Fall back to plain PAN if encryption fails
+        }
+      } else {
+        logger.warn('[VisaDirect] Sending sender PAN in plain text - MLE not configured', {
+          systemsTraceAuditNumber
+        });
+      }
+
       // Build payload according to Visa Direct API specification
       const payload = {
         // Required fields for AFT
@@ -355,7 +487,8 @@ class VisaDirectService {
         businessApplicationId,
         cardAcceptor: cardAcceptor || this.defaultCardAcceptor,
         localTransactionDateTime: this.getLocalTransactionDateTime(),
-        senderPrimaryAccountNumber: senderPAN,
+        ...(senderPANForRequest && { senderPrimaryAccountNumber: senderPANForRequest }),
+        ...(encryptedData && { encryptedData: encryptedData.encryptedData }),
         retrievalReferenceNumber,
         systemsTraceAuditNumber,
         senderCurrencyCode: currency,
@@ -431,10 +564,15 @@ class VisaDirectService {
    * Reverse Funds Transaction (AFTR - Account Funding Transaction Reversal)
    * Reverse a previous pull funds transaction (AFT)
    *
+   * Security:
+   * - If MLE is configured, sender PAN will be encrypted using Visa Direct MLE config
+   * - Encrypted data replaces plain PAN in the request
+   * - Falls back to plain text if encryption fails (with warning logged)
+   *
    * @param {object} params - Reversal parameters
    * @param {object} params.originalTransaction - Original AFT transaction data
    * @param {number} params.originalTransaction.amount - Amount from original AFT
-   * @param {string} params.originalTransaction.senderPAN - Sender PAN from original AFT
+   * @param {string} params.originalTransaction.senderPAN - Sender PAN from original AFT - will be encrypted if MLE enabled
    * @param {number} params.originalTransaction.systemsTraceAuditNumber - STAN from original AFT
    * @param {string} params.originalTransaction.retrievalReferenceNumber - RRN from original AFT
    * @param {string} params.originalTransaction.transmissionDateTime - From original AFT response
@@ -473,6 +611,46 @@ class VisaDirectService {
         throw new Error('Missing required original transaction fields for reversal');
       }
 
+      // Encrypt sensitive card data if MLE is enabled
+      let senderPANForRequest = senderPAN;
+      let encryptedData = null;
+
+      if (this.useMLE) {
+        logger.info('[VisaDirect] Encrypting sender card data for reversal with MLE', {
+          originalSTAN,
+          originalRRN,
+          configType: 'visaDirect'
+        });
+
+        try {
+          encryptedData = mle.encrypt(
+            {
+              senderPrimaryAccountNumber: senderPAN
+            },
+            'visaDirect'
+          );
+
+          logger.info('[VisaDirect] Card data encrypted successfully for reversal', {
+            encryptedDataSize: encryptedData.encryptedData?.length || 0,
+            keyId: encryptedData.encryptionKeyId,
+            originalSTAN
+          });
+
+          // Use encrypted data field instead of plain PAN
+          senderPANForRequest = null;
+        } catch (encryptError) {
+          logger.error('[VisaDirect] MLE encryption failed for reversal, falling back to plain text', {
+            error: encryptError.message,
+            originalSTAN
+          });
+          // Fall back to plain PAN if encryption fails
+        }
+      } else {
+        logger.warn('[VisaDirect] Sending sender PAN in plain text for reversal - MLE not configured', {
+          originalSTAN
+        });
+      }
+
       // Build payload according to Visa Direct API specification
       const payload = {
         // Required fields for AFTR
@@ -494,7 +672,8 @@ class VisaDirectService {
 
         retrievalReferenceNumber: originalRRN, // Must match original AFT
         senderCurrencyCode: currency,
-        senderPrimaryAccountNumber: senderPAN,
+        ...(senderPANForRequest && { senderPrimaryAccountNumber: senderPANForRequest }),
+        ...(encryptedData && { encryptedData: encryptedData.encryptedData }),
         systemsTraceAuditNumber: originalSTAN, // Must match original AFT
         transactionIdentifier
       };

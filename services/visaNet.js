@@ -12,12 +12,51 @@ const mle = require('../utils/mle');
  * - Authorization Voids (Cancel/void authorized transactions)
  * - Settlement Position Inquiry (Check settlement status)
  *
+ * Security Layers:
+ * 1. Mutual TLS: Client certificate authentication
+ * 2. MLE: End-to-end payload encryption for sensitive card data
+ *
+ * MLE Configuration:
+ * - Key ID: VISANET_MLE_KEY_ID (from .env)
+ * - Client Certificate: VISANET_MLE_CLIENT_CERT
+ * - Server Certificate: VISANET_MLE_SERVER_CERT (Visa's public key)
+ * - Private Key: VISANET_MLE_PRIVATE_KEY
+ * - Algorithm: RSA-OAEP with SHA-256
+ * - Config Type: 'visaNet'
+ *
  * @see config/api_reference (2).json for complete API specification
  */
 class VisaNetService {
+  /**
+   * Initialize VisaNet Connect service with MLE encryption support
+   *
+   * The constructor:
+   * 1. Sets up HTTPS agent with mutual TLS certificates
+   * 2. Verifies MLE configuration for VisaNet
+   * 3. Logs MLE status (enabled/disabled with reasons)
+   * 4. Configures default acceptor and terminal information
+   *
+   * @constructor
+   */
   constructor() {
+    logger.info('[VisaNet] Initializing VisaNet Connect service');
     this.baseURL = process.env.VISA_API_URL || 'https://sandbox.api.visa.com';
     this.agent = config.createHttpsAgent();
+
+    // Verify MLE configuration for VisaNet
+    const mleStatus = mle.verifyConfiguration('visaNet');
+    if (mleStatus.configured) {
+      logger.info('[VisaNet] MLE encryption enabled', {
+        keyId: process.env.VISANET_MLE_KEY_ID,
+        algorithm: 'RSA-OAEP-SHA256'
+      });
+      this.useMLE = true;
+    } else {
+      logger.warn('[VisaNet] MLE encryption not configured - sensitive data will be sent in plain text', {
+        errors: mleStatus.errors
+      });
+      this.useMLE = false;
+    }
 
     // Use VisaNet Connect credentials
     this.clientId = process.env.VISANET_USER_ID || process.env.VISA_CLIENT_ID || '1VISAGCT000001';
@@ -140,10 +179,16 @@ class VisaNetService {
    * Create Payment Authorization
    * Request authorization for a payment transaction
    *
+   * Security:
+   * - If MLE is configured, card data (PAN, CVV, expiry) will be encrypted using VisaNet MLE config
+   * - Encrypted data sent in PrtctdCardData.EncryptedData field
+   * - Falls back to plain text if encryption fails (with warning logged)
+   * - Plain text sent in PlainCardData field (not recommended for production)
+   *
    * @param {object} params - Authorization parameters
-   * @param {string} params.cardNumber - Primary account number (PAN)
-   * @param {string} params.expiryDate - Card expiry (YYMM format)
-   * @param {string} params.cvv - Card verification value
+   * @param {string} params.cardNumber - Primary account number (PAN) - will be encrypted if MLE enabled
+   * @param {string} params.expiryDate - Card expiry (YYMM format) - will be encrypted if MLE enabled
+   * @param {string} params.cvv - Card verification value - will be encrypted if MLE enabled
    * @param {number} params.amount - Transaction amount
    * @param {string} params.currency - Currency code (e.g., '840' for USD)
    * @param {string} params.merchantCategoryCode - MCC (e.g., '4814' for telecom)
@@ -185,32 +230,63 @@ class VisaNetService {
       };
 
       let cardDataForRequest;
-      if (mle.isConfigured) {
-        // Encrypt sensitive card data using MLE
-        logger.info('Encrypting card data with MLE', { correlationId });
-        const encryptedData = mle.encrypt({
-          pan: cardNumber,
-          cvv: cvv,
-          expiryDate: expiryDate
+      if (this.useMLE) {
+        // Encrypt sensitive card data using MLE with VisaNet config
+        logger.info('[VisaNet] Encrypting card data with MLE', {
+          correlationId,
+          configType: 'visaNet'
         });
 
-        // Use encrypted data in request
-        cardDataForRequest = {
-          PrtctdCardData: {
-            CardSeqNb: '01',
-            XpryDt: expiryDate,
-            EncryptedData: encryptedData.encryptedData,
-            EncryptionKeyId: encryptedData.encryptionKeyId,
-            EncryptionType: encryptedData.encryptionType
-          }
-        };
-        logger.info('Card data encrypted successfully', {
-          correlationId,
-          keyId: encryptedData.encryptionKeyId
-        });
+        try {
+          const encryptedData = mle.encrypt(
+            {
+              pan: cardNumber,
+              cvv: cvv,
+              expiryDate: expiryDate
+            },
+            'visaNet'
+          );
+
+          // Use encrypted data in request
+          cardDataForRequest = {
+            PrtctdCardData: {
+              CardSeqNb: '01',
+              XpryDt: expiryDate,
+              EncryptedData: encryptedData.encryptedData,
+              EncryptionKeyId: encryptedData.encryptionKeyId,
+              EncryptionType: encryptedData.encryptionType
+            }
+          };
+
+          logger.info('[VisaNet] Card data encrypted successfully', {
+            correlationId,
+            encryptedDataSize: encryptedData.encryptedData?.length || 0,
+            keyId: encryptedData.encryptionKeyId
+          });
+        } catch (encryptError) {
+          logger.error('[VisaNet] MLE encryption failed, falling back to plain text', {
+            error: encryptError.message,
+            correlationId
+          });
+
+          // Fall back to plain card data if encryption fails
+          cardDataForRequest = {
+            PrtctdCardData: {
+              CardSeqNb: '01',
+              XpryDt: expiryDate
+            },
+            PlainCardData: cardData,
+            ...(cvv && {
+              CardCtryCd: this.defaultAcceptor.address.country,
+              CardData: {
+                Cvc: cvv
+              }
+            })
+          };
+        }
       } else {
         // Use plain card data (not recommended for production)
-        logger.warn('MLE not configured - sending card data in plain text', { correlationId });
+        logger.warn('[VisaNet] Sending card data in plain text - MLE not configured', { correlationId });
         cardDataForRequest = {
           PrtctdCardData: {
             CardSeqNb: '01',
