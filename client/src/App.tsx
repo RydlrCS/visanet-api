@@ -17,6 +17,7 @@ import { TransactionsList, NewTransaction, TransactionDetail } from './component
 import { CardsList, AddCard } from './components/Cards';
 import { ProfileSettings } from './components/ProfileSettings';
 import { Notifications } from './components/Notifications';
+import { Invoices } from './components/Invoices';
 import { Loading } from './components/common';
 import './App.css';
 
@@ -122,6 +123,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Notifications />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/invoices"
+            element={
+              <ProtectedRoute>
+                <Invoices />
               </ProtectedRoute>
             }
           />
