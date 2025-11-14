@@ -8,3 +8,4 @@
 
 export * from './TransactionsList';
 export * from './NewTransaction';
+export * from './TransactionDetail';

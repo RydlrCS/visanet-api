@@ -13,7 +13,7 @@ import { logger } from './utils/logger';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Login, Register, ForgotPassword } from './components/auth';
 import { Dashboard } from './components/Dashboard';
-import { TransactionsList, NewTransaction } from './components/Transactions';
+import { TransactionsList, NewTransaction, TransactionDetail } from './components/Transactions';
 import { CardsList, AddCard } from './components/Cards';
 import { Loading } from './components/common';
 import './App.css';
@@ -80,6 +80,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <NewTransaction />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/transactions/:id"
+            element={
+              <ProtectedRoute>
+                <TransactionDetail />
               </ProtectedRoute>
             }
           />
