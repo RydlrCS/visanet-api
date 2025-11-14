@@ -16,6 +16,7 @@ import { Dashboard } from './components/Dashboard';
 import { TransactionsList, NewTransaction, TransactionDetail } from './components/Transactions';
 import { CardsList, AddCard } from './components/Cards';
 import { ProfileSettings } from './components/ProfileSettings';
+import { Notifications } from './components/Notifications';
 import { Loading } from './components/common';
 import './App.css';
 
@@ -113,6 +114,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ProfileSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <Notifications />
               </ProtectedRoute>
             }
           />
