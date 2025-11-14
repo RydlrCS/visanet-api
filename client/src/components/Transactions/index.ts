@@ -7,3 +7,4 @@
  */
 
 export * from './TransactionsList';
+export * from './NewTransaction';
