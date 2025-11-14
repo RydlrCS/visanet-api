@@ -31,14 +31,14 @@ async function testVisaNetAuthorization() {
     // Get VisaNet service instance
     log('Step 1: Initializing VisaNet service...', 'blue');
     const visaNet = VisaNetService; // Already an instance
-    
+
     // Check configuration
-    log('Payment Facility ID: ' + (process.env.VISANET_PAYMENT_FACILITY_ID || 'NOT SET'), 
-        process.env.VISANET_PAYMENT_FACILITY_ID && !process.env.VISANET_PAYMENT_FACILITY_ID.includes('your_') ? 'green' : 'red');
+    log('Payment Facility ID: ' + (process.env.VISANET_PAYMENT_FACILITY_ID || 'NOT SET'),
+      process.env.VISANET_PAYMENT_FACILITY_ID && !process.env.VISANET_PAYMENT_FACILITY_ID.includes('your_') ? 'green' : 'red');
     log('Acceptor ID: ' + (process.env.VISANET_ACCEPTOR_ID || 'NOT SET'),
-        process.env.VISANET_ACCEPTOR_ID && !process.env.VISANET_ACCEPTOR_ID.includes('your_') ? 'green' : 'red');
+      process.env.VISANET_ACCEPTOR_ID && !process.env.VISANET_ACCEPTOR_ID.includes('your_') ? 'green' : 'red');
     log('MLE Enabled: ' + (visaNet.useMLE ? 'Yes' : 'No'), visaNet.useMLE ? 'green' : 'yellow');
-    
+
     console.log('');
 
     // Test data - VisaNet Connect test card
@@ -66,15 +66,15 @@ async function testVisaNetAuthorization() {
     log(`Card: ${testData.cardNumber.slice(0, 6)}******${testData.cardNumber.slice(-4)}`, 'cyan');
     log(`Merchant: ${testData.cardAcceptorName}`, 'cyan');
     log(`Payment Facility: ${process.env.VISANET_PAYMENT_FACILITY_ID}`, 'cyan');
-    
+
     console.log('');
 
     // Make authorization request
     log('Step 3: Sending authorization request...', 'blue');
     log('This may take a few seconds...', 'yellow');
-    
+
     const result = await visaNet.authorize(testData);
-    
+
     console.log('');
     log('========================================', 'cyan');
     log('  Authorization Response', 'cyan');
@@ -86,7 +86,7 @@ async function testVisaNetAuthorization() {
       log(`Approval Code: ${result.approvalCode || 'N/A'}`, 'green');
       log(`Transaction ID: ${result.transactionId || 'N/A'}`, 'cyan');
       log(`Action Code: ${result.actionCode || 'N/A'}`, 'cyan');
-      
+
       if (result.response) {
         console.log('\nFull Response:', 'cyan');
         console.log(JSON.stringify(result.response, null, 2));
@@ -95,7 +95,7 @@ async function testVisaNetAuthorization() {
       log('✗ Authorization Failed', 'red');
       log(`Error: ${result.error}`, 'red');
       log(`Response Code: ${result.responseCode || 'N/A'}`, 'yellow');
-      
+
       if (result.response) {
         console.log('\nError Response:', 'yellow');
         console.log(JSON.stringify(result.response, null, 2));
@@ -114,21 +114,21 @@ async function testVisaNetAuthorization() {
     log('========================================', 'red');
     log('  Test Failed', 'red');
     log('========================================\n', 'red');
-    
+
     log(`Error: ${error.message}`, 'red');
-    
+
     if (error.stack) {
       console.log('\nStack Trace:', 'yellow');
       console.log(error.stack);
     }
-    
+
     console.log('');
     log('Troubleshooting Tips:', 'cyan');
     log('1. Verify Payment Facility ID is correct', 'cyan');
     log('2. Check VisaNet credentials in .env', 'cyan');
     log('3. Ensure MLE certificates are properly configured', 'cyan');
     log('4. Review error details above', 'cyan');
-    
+
     process.exit(1);
   }
 }

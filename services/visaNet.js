@@ -288,17 +288,8 @@ class VisaNetService {
         // Use plain card data (not recommended for production)
         logger.warn('[VisaNet] Sending card data in plain text - MLE not configured', { correlationId });
         cardDataForRequest = {
-          PrtctdCardData: {
-            CardSeqNb: '01',
-            XpryDt: expiryDate
-          },
-          PlainCardData: cardData,
-          ...(cvv && {
-            CardCtryCd: this.defaultAcceptor.address.country,
-            CardData: {
-              Cvc: cvv
-            }
-          })
+          XpryDt: expiryDate,
+          PAN: cardNumber
         };
       }
 
@@ -332,7 +323,7 @@ class VisaNetService {
           Envt: {
             Accptr: acceptor || {
               PaymentFacltId: this.defaultAcceptor.paymentFacilityId,
-              Accptr: this.defaultAcceptor.acceptorId,
+              Id: this.defaultAcceptor.acceptorId,
               CstmrSvc: this.defaultAcceptor.customerService,
               Adr: {
                 PstlCd: this.defaultAcceptor.address.postalCode,
@@ -354,6 +345,18 @@ class VisaNetService {
             })
           },
           Cntxt: {
+            ...(cvv && {
+              Vrfctn: [
+                {
+                  VrfctnInf: {
+                    Val: {
+                      TxtVal: cvv
+                    }
+                  },
+                  Tp: 'CSCV'
+                }
+              ]
+            }),
             TxCntxt: {
               MrchntCtgyCd: merchantCategoryCode
             },
@@ -478,7 +481,7 @@ class VisaNetService {
           Envt: {
             Accptr: acceptor || {
               PaymentFacltId: this.defaultAcceptor.paymentFacilityId,
-              Accptr: this.defaultAcceptor.acceptorId,
+              Id: this.defaultAcceptor.acceptorId,
               CstmrSvc: this.defaultAcceptor.customerService,
               Adr: {
                 PstlCd: this.defaultAcceptor.address.postalCode,
@@ -602,7 +605,7 @@ class VisaNetService {
           Envt: {
             Accptr: acceptor || {
               PaymentFacltId: this.defaultAcceptor.paymentFacilityId,
-              Accptr: this.defaultAcceptor.acceptorId,
+              Id: this.defaultAcceptor.acceptorId,
               CstmrSvc: this.defaultAcceptor.customerService,
               Adr: {
                 PstlCd: this.defaultAcceptor.address.postalCode,
