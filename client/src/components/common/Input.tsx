@@ -36,6 +36,10 @@ export interface InputProps {
   className?: string;
   /** Autocomplete attribute */
   autoComplete?: string;
+  /** Maximum length of input value */
+  maxLength?: number;
+  /** Minimum length of input value */
+  minLength?: number;
 }
 
 /**
@@ -56,6 +60,8 @@ export const Input: React.FC<InputProps> = ({
   disabled = false,
   className = '',
   autoComplete,
+  maxLength,
+  minLength,
 }) => {
   logger.entry('Input', { name, type, hasError: !!error });
 
@@ -92,6 +98,8 @@ export const Input: React.FC<InputProps> = ({
         required={required}
         disabled={disabled}
         autoComplete={autoComplete}
+        maxLength={maxLength}
+        minLength={minLength}
         className={inputClasses}
         aria-invalid={!!error}
         aria-describedby={error ? `${name}-error` : undefined}

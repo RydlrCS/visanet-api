@@ -11,7 +11,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { logger } from './utils/logger';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { Login, Register } from './components/auth';
+import { Login, Register, ForgotPassword } from './components/auth';
 import { Dashboard } from './components/Dashboard';
 import { TransactionsList } from './components/Transactions/TransactionsList';
 import { CardsList } from './components/Cards/CardsList';
@@ -56,6 +56,7 @@ function App() {
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
 
           {/* Protected routes - Complete User Journey */}
           <Route
