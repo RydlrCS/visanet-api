@@ -1,9 +1,9 @@
 # Visa API Credentials Checklist
 
-## ✅ Portal Access (COMPLETED)
+## ✅ Portal Access
 - **URL**: https://developer.visa.com/login/
-- **Email**: locapaylimited@gmail.com  
-- **Password**: Locapay$1999
+- **Email**: [Contact LocaPay admin for credentials]
+- **Password**: [Contact LocaPay admin for credentials]
 
 ---
 

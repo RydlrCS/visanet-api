@@ -10,8 +10,8 @@
 
 ### 2. Credentials Configuration
 - ✅ Added VisaNet Connect credentials to `.env`:
-  - `VISANET_USER_ID`: IOJF8KXYAGUWABS0TZ3U21efJ-hJB-wUp_DQjn9EVdXmIaoIE
-  - `VISANET_PASSWORD`: 9m7LFAqsGA1Xz7Mx8w661A9wDf9ZwQ6b
+  - `VISANET_USER_ID`: [Configured in .env]
+  - `VISANET_PASSWORD`: [Configured in .env]
 - ✅ Separated Visa Direct and VisaNet Connect credentials
 - ✅ Updated `config/visa.js` to use system CAs instead of requiring `ca.pem`
 
@@ -39,8 +39,7 @@ The API is returning error code `9125` which means a required credential field i
 
 1. **Log into Visa Developer Portal:**
    - URL: https://developer.visa.com/portal/app/v2/c70ff121-977b-4872-9b69-550b1c281755/SBX
-   - Email: locapaylimited@gmail.com
-   - Password: Locapay$1999
+   - Use your LocaPay credentials (contact admin if needed)
 
 2. **Find Test Data Section:**
    - Navigate to "Test Data" or "Sandbox Configuration"

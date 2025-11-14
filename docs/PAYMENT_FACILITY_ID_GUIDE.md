@@ -16,7 +16,7 @@ The Payment Facility ID is part of the **Acceptor** (merchant) information in th
 ```json
 {
   "msgIdentfctn": {
-    "clientId": "IOJF8KXYAGUWABS0TZ3U21efJ-hJB-wUp_DQjn9EVdXmIaoIE",
+    "clientId": "YOUR_VISANET_CLIENT_ID",
     "correlatnId": "abc123xyz"
   },
   "Body": {

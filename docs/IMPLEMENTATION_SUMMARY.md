@@ -319,8 +319,7 @@ console.log(statusResult);
 ### 1. Get API Credentials
 
 1. Log in to Visa Developer Portal: https://developer.visa.com/login/
-   - Email: locapaylimited@gmail.com
-   - Password: Locapay$1999
+   - Use your LocaPay credentials (contact admin if needed)
 
 2. Navigate to your project → Credentials tab
 

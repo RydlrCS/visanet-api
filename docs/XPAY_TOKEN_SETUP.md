@@ -29,10 +29,9 @@ zW4VWNWPnefDf4exldjxgPUyzNSGI/iriodOQI79i/b4tl4RxI8IfQWuwIim1piS
 
 ## Step 2: Submit Public Key to Visa Developer Portal
 
-1. **Log into Visa Developer Portal:**
-   - URL: https://developer.visa.com/portal/app/v2/c70ff121-977b-4872-9b69-550b1c281755/SBX
-   - Email: locapaylimited@gmail.com
-   - Password: Locapay$1999
+1. **Log in to Visa Developer Portal:**
+   - URL: https://developer.visa.com/login/
+   - Use your LocaPay credentials (contact admin if needed)
 
 2. **Navigate to MLE (Message Level Encryption) Configuration:**
    - Go to your project dashboard

@@ -331,8 +331,7 @@ Structure includes `request[]` array with multiple transaction objects.
 ## Testing Credentials
 
 **Visa Developer Portal:** https://developer.visa.com/login/
-- Email: locapaylimited@gmail.com
-- Password: Locapay$1999
+- Use your LocaPay credentials (contact admin if needed)
 
 **Test Cards:** Available in Visa Developer Portal under project resources.
 

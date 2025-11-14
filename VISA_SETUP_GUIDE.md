@@ -2,16 +2,15 @@
 
 ## Login Credentials
 - **Portal URL**: https://developer.visa.com/login/
-- **Email**: locapaylimited@gmail.com
-- **Password**: Locapay$1999
+- **Email**: [Contact LocaPay admin for credentials]
+- **Password**: [Contact LocaPay admin for credentials]
 
 ## Steps to Get API Credentials
 
 ### 1. Login to Visa Developer Portal
 1. Go to https://developer.visa.com/login/
-2. Enter email: `locapaylimited@gmail.com`
-3. Enter password: `Locapay$1999`
-4. Click "Sign In"
+2. Use your LocaPay credentials (contact admin if needed)
+3. Click "Sign In"
 
 ### 2. Navigate to Your Project
 1. After login, go to **Dashboard**
