@@ -1,0 +1,31 @@
+L o g i n / S i g n  U p
+L o g i n  S c r e e n S i g n  U pF o r g e t  P a s s w o r d  f l o w E m a i l +  v e r i f i c a t i o n  
+c o d e A d d  n e w  p a s s w o r d
+ D a s h b o a r d
+A c c o u n t  T y p e  S c r e e n
+P a y m e n t  T o  n e w  
+m e r c h a n t
+C o u n t r y2 F AP a s s w o r d
+P a y m e n t  t o  r e c u r r i n g  
+u s e rT r a n s a c t i o n  H i s t o r y N o t i f i c a t i o n s I n v o i c e s A d d  B a n k
+V e r i f y  y o u r  b u s i n e s s
+A l l  H i s t o r y  S c r e e n
+P a r t i c u l a r  t r a n s a c t i o n
+A d d  D e t a i l s  S c r e e n
+A m o u n t /  T r a n s a c t i o n  
+S c r e e n
+T r a n s a c t i o n  c o m p l e t e .  
+I n v o i c e  D o w n l o a d
+A m o u n t /  T r a n s a c t i o n  
+S c r e e n
+T r a n s a c t i o n  c o m p l e t e .  
+I n v o i c e  D o w n l o a d
+A l l  N o t i f i c a t i o n s  P a g e A l l  T r a n s a c t i o n s
+I n v o i c e  d o w n l o a d e d  
+m o d a l
+D e t a i l s  s c r e e n
+P r o f i l e D e l e t e  A c c o u n tC u s t o m e r  S u p p o r t
+B u s i n e s s  I n f o r m a t i o n  S c r e e n H e l p  D e s k C o n f i r m a t i o n  M o d a l
+R e p o r t s
+T r a n s a c t i o n  G r a p h
+S e c t i o n  1
