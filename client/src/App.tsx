@@ -14,7 +14,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Login, Register, ForgotPassword } from './components/auth';
 import { Dashboard } from './components/Dashboard';
 import { TransactionsList } from './components/Transactions/TransactionsList';
-import { CardsList } from './components/Cards/CardsList';
+import { CardsList, AddCard } from './components/Cards';
 import { Loading } from './components/common';
 import './App.css';
 
@@ -80,6 +80,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <CardsList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cards/add"
+            element={
+              <ProtectedRoute>
+                <AddCard />
               </ProtectedRoute>
             }
           />

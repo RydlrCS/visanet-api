@@ -7,3 +7,4 @@
  */
 
 export * from './CardsList';
+export * from './AddCard';
