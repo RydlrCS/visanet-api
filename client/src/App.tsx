@@ -12,6 +12,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { logger } from './utils/logger';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Login, Register } from './components/auth';
+import { Dashboard } from './components/Dashboard';
+import { TransactionsList } from './components/Transactions/TransactionsList';
+import { CardsList } from './components/Cards/CardsList';
 import { Loading } from './components/common';
 import './App.css';
 
@@ -39,35 +42,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 };
 
 /**
- * Temporary Dashboard placeholder component
- * TODO: Replace with full Dashboard component
- */
-const DashboardPlaceholder: React.FC = () => {
-  const { user, logout } = useAuth();
-  
-  return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            Welcome to LocaPay Dashboard
-          </h1>
-          <p className="text-gray-600 mb-4">
-            Hello, {user?.firstName} {user?.lastName}!
-          </p>
-          <button
-            onClick={logout}
-            className="bg-danger text-white px-4 py-2 rounded hover:bg-danger-dark"
-          >
-            Logout
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-/**
  * Main application component with routing
  * 
  * @returns Application component
@@ -83,12 +57,28 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* Protected routes */}
+          {/* Protected routes - Complete User Journey */}
           <Route
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <DashboardPlaceholder />
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/transactions"
+            element={
+              <ProtectedRoute>
+                <TransactionsList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cards"
+            element={
+              <ProtectedRoute>
+                <CardsList />
               </ProtectedRoute>
             }
           />
