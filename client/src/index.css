@@ -1,20 +1,21 @@
 @import "tailwindcss";
 
 /**
- * Global Styles for LocaPay Application
+ * Global Styles for Rydlr Visanet API Application
  * 
- * This file imports Tailwind CSS and defines global styles
- * for the LocaPay payment processing application.
+ * Professional, minimal design with brand colors
  */
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  line-height: 1.6;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color-scheme: light;
+  color: #1F2937;
+  background-color: #F9FAFB;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -27,6 +28,7 @@ body {
   display: flex;
   min-width: 320px;
   min-height: 100vh;
+  background-color: #F9FAFB;
 }
 
 #root {

@@ -45,27 +45,21 @@ router.post('/', [
     }
 
     // Create new card
-    const card = new Card({
+    const card = await Card.create({
       userId: req.user.id,
       cardholderName,
-      expiry: {
-        month: expiryMonth,
-        year: expiryYear
-      },
+      expiryMonth: expiryMonth.toString().padStart(2, '0'),
+      expiryYear: expiryYear.toString(),
       cardType: detectCardType(cardNumber),
       lastFourDigits: cardNumber.slice(-4),
-      billingAddress: billingAddress || req.user.address,
+      cardNumberEncrypted: Card.encryptCardNumber(cardNumber),
+      billingAddress: billingAddress || null,
       isDefault: isDefault || false
     });
 
-    // Encrypt and store card number
-    card.cardNumberEncrypted = card.encryptCardNumber(cardNumber);
-
-    await card.save();
-
     logger.info('Card added:', {
       userId: req.user.id,
-      cardId: card._id,
+      cardId: card.id,
       lastFour: card.lastFourDigits
     });
 
@@ -73,11 +67,12 @@ router.post('/', [
       success: true,
       message: 'Card added successfully',
       card: {
-        id: card._id,
+        id: card.id,
         lastFourDigits: card.lastFourDigits,
         cardType: card.cardType,
         cardholderName: card.cardholderName,
-        expiry: card.expiry,
+        expiryMonth: card.expiryMonth,
+        expiryYear: card.expiryYear,
         isDefault: card.isDefault
       }
     });
@@ -95,19 +90,17 @@ router.post('/', [
  */
 router.get('/', auth, async(req, res) => {
   try {
-    const cards = await Card.find({
-      userId: req.user.id,
-      isActive: true
-    }).select('-cardNumberEncrypted');
+    const cards = await Card.findByUserId(req.user.id, true);
 
     res.json({
       success: true,
       cards: cards.map(card => ({
-        id: card._id,
+        id: card.id,
         lastFourDigits: card.lastFourDigits,
         cardType: card.cardType,
         cardholderName: card.cardholderName,
-        expiry: card.expiry,
+        expiryMonth: card.expiryMonth,
+        expiryYear: card.expiryYear,
         isDefault: card.isDefault
       }))
     });
@@ -125,23 +118,21 @@ router.get('/', auth, async(req, res) => {
  */
 router.get('/:id', auth, async(req, res) => {
   try {
-    const card = await Card.findOne({
-      _id: req.params.id,
-      userId: req.user.id
-    }).select('-cardNumberEncrypted');
+    const card = await Card.findById(req.params.id);
 
-    if (!card) {
+    if (!card || card.userId !== req.user.id) {
       return res.status(404).json({ message: 'Card not found' });
     }
 
     res.json({
       success: true,
       card: {
-        id: card._id,
+        id: card.id,
         lastFourDigits: card.lastFourDigits,
         cardType: card.cardType,
         cardholderName: card.cardholderName,
-        expiry: card.expiry,
+        expiryMonth: card.expiryMonth,
+        expiryYear: card.expiryYear,
         isDefault: card.isDefault,
         billingAddress: card.billingAddress
       }
@@ -160,35 +151,37 @@ router.get('/:id', auth, async(req, res) => {
  */
 router.put('/:id/set-default', auth, async(req, res) => {
   try {
+    // Get all user cards
+    const userCards = await Card.findByUserId(req.user.id, false);
+    
     // Remove default from all cards
-    await Card.updateMany(
-      { userId: req.user.id },
-      { isDefault: false }
-    );
+    for (const card of userCards) {
+      if (card.isDefault) {
+        await Card.updateById(card.id, { isDefault: false });
+      }
+    }
 
     // Set new default
-    const card = await Card.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user.id },
-      { isDefault: true },
-      { new: true }
-    );
+    const card = await Card.findById(req.params.id);
 
-    if (!card) {
+    if (!card || card.userId !== req.user.id) {
       return res.status(404).json({ message: 'Card not found' });
     }
 
+    await Card.updateById(card.id, { isDefault: true });
+
     logger.info('Default card updated:', {
       userId: req.user.id,
-      cardId: card._id
+      cardId: card.id
     });
 
     res.json({
       success: true,
       message: 'Default card updated',
       card: {
-        id: card._id,
+        id: card.id,
         lastFourDigits: card.lastFourDigits,
-        isDefault: card.isDefault
+        isDefault: true
       }
     });
 
@@ -205,21 +198,17 @@ router.put('/:id/set-default', auth, async(req, res) => {
  */
 router.delete('/:id', auth, async(req, res) => {
   try {
-    const card = await Card.findOne({
-      _id: req.params.id,
-      userId: req.user.id
-    });
+    const card = await Card.findById(req.params.id);
 
-    if (!card) {
+    if (!card || card.userId !== req.user.id) {
       return res.status(404).json({ message: 'Card not found' });
     }
 
-    card.isActive = false;
-    await card.save();
+    await Card.updateById(card.id, { status: 'inactive' });
 
     logger.info('Card deleted:', {
       userId: req.user.id,
-      cardId: card._id
+      cardId: card.id
     });
 
     res.json({

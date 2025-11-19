@@ -1,0 +1,407 @@
+================================================================================
+PAYMENT FACILITY ID ISSUE - RESOLUTION REPORT (UPDATED)
+================================================================================
+
+From: Ted
+To: Nikolay Orlenko, Visa Developer Support  
+Date: November 19, 2025
+Re: Error 9125 - Expected input credential was not present - ROOT CAUSE FOUND
+
+Repository: https://github.com/RydlrCS/visanet-api/tree/main
+
+================================================================================
+🔍 ROOT CAUSE IDENTIFIED
+================================================================================
+
+**CRITICAL FINDING: Missing Environment Variables**
+
+The diagnostic script revealed that the following REQUIRED credentials are NOT SET:
+
+❌ VISANET_CLIENT_ID - NOT SET
+❌ VISANET_TERMINAL_ID - NOT SET
+
+Current .env file contains:
+✅ VISANET_USER_ID - SET
+✅ VISANET_PASSWORD - SET  
+✅ VISANET_PAYMENT_FACILITY_ID - SET (vdcuntdbkafricang)
+✅ VISANET_ACCEPTOR_ID - SET (vdcuntdbkafricang)
+✅ VISANET_MLE_KEY_ID - SET (68d1367c-6766-49fe-b8ef-bbc7d4763949)
+✅ VISANET_MLE_CLIENT_CERT - SET
+✅ VISANET_MLE_PRIVATE_KEY - SET
+✅ VISANET_MLE_SERVER_CERT - SET
+
+================================================================================
+ERROR 9125 EXPLANATION
+================================================================================
+
+Error Code: 9125
+Message: "Expected input credential was not present"
+HTTP Status: 400 Bad Request
+
+ROOT CAUSE:
+The VisaNet Connect API requires a Client ID in the msgIdentfctn section:
+
+{
+  "msgIdentfctn": {
+    "clientId": "YOUR_CLIENT_ID",    ← THIS WAS MISSING/USING FALLBACK
+    "correlatnId": "correlation-id"
+  },
+  ...
+}
+
+The code currently falls back to VISANET_USER_ID for clientId:
+  this.clientId = process.env.VISANET_USER_ID || process.env.VISA_CLIENT_ID || '1VISAGCT000001';
+
+However, VISANET_USER_ID is the authentication username (used in Basic Auth header),
+NOT the same as the Client ID required in the request body!
+
+================================================================================
+HOW TO GET CLIENT ID
+================================================================================
+
+From Visa Developer Portal:
+
+1. Log in to: https://developer.visa.com/portal
+2. Navigate to: Dashboard → Your VisaNet Connect Project
+3. Go to: Credentials or Project Settings
+4. Find: "Client Application ID" or "API Client ID"
+5. Copy the Client ID (format varies, could be alphanumeric)
+
+Alternatively, check:
+- Project → Test Data section
+- Project → API Keys section
+- Email from Visa with project credentials
+
+================================================================================
+REQUIRED ACTIONS TO RESOLVE ERROR 9125
+================================================================================
+
+Step 1: Add Missing Environment Variables to .env
+--------------------------------------------------
+Add these lines to your .env file:
+
+# VisaNet Connect API Credentials
+VISANET_CLIENT_ID=your_actual_client_id_from_visa_portal
+VISANET_TERMINAL_ID=your_terminal_id_or_10012343
+
+# Optional: More explicit naming
+VISA_CLIENT_ID=your_actual_client_id_from_visa_portal
+
+Example:
+```
+VISANET_CLIENT_ID=1ABCD2345EFGH6789
+VISANET_TERMINAL_ID=10012343
+```
+
+Step 2: Verify Configuration
+-----------------------------
+Check that your .env now has ALL required fields:
+
+```bash
+# Authentication (Basic Auth)
+VISANET_USER_ID=your_user_id
+VISANET_PASSWORD=your_password
+
+# Request Body Credentials
+VISANET_CLIENT_ID=your_client_id          ← ADD THIS
+VISANET_PAYMENT_FACILITY_ID=vdcuntdbkafricang
+VISANET_ACCEPTOR_ID=vdcuntdbkafricang
+VISANET_TERMINAL_ID=10012343              ← ADD THIS
+
+# MLE Configuration
+VISANET_MLE_KEY_ID=68d1367c-6766-49fe-b8ef-bbc7d4763949
+VISANET_MLE_CLIENT_CERT=./certs/client-cert.pem
+VISANET_MLE_PRIVATE_KEY=./certs/key_*.pem
+VISANET_MLE_SERVER_CERT=./certs/mle-server-cert-visa.pem
+
+# Additional Acceptor Info
+VISANET_CUSTOMER_SERVICE=1 4155552235
+VISANET_ACCEPTOR_ZIP=94404
+VISANET_ACCEPTOR_COUNTRY_ALPHA2=US
+VISANET_ACCEPTOR_STATE_CODE=06
+VISANET_ACCEPTOR_COUNTY_CODE=081
+```
+
+Step 3: Update Code if Needed
+------------------------------
+The code in services/visaNet.js should use:
+
+```javascript
+constructor() {
+  // Client ID for request body (msgIdentfctn.clientId)
+  this.clientId = process.env.VISANET_CLIENT_ID || 
+                  process.env.VISA_CLIENT_ID || 
+                  '1VISAGCT000001';  // Default fallback
+  
+  // Terminal ID for request body (Body.Envt.Termnl.TermnlId)
+  this.defaultTerminal = {
+    terminalId: process.env.VISANET_TERMINAL_ID || '10012343',
+    // ... other terminal settings
+  };
+}
+```
+
+Step 4: Test Again
+------------------
+```bash
+cd /Users/ted/git\ clone\ repos/visanet-api
+node scripts/test-visanet-with-mle.js
+```
+
+Expected outcome:
+- ✅ Authorization should succeed OR
+- Different error code (not 9125)
+
+================================================================================
+UNDERSTANDING THE CREDENTIALS
+================================================================================
+
+Three Different Types of Credentials:
+
+1. **Authentication Credentials** (Header - Basic Auth)
+   - VISANET_USER_ID
+   - VISANET_PASSWORD
+   - Used in: Authorization header as Base64(userId:password)
+   - Purpose: Authenticate WHO is making the request
+
+2. **Client Identification** (Request Body - msgIdentfctn)
+   - VISANET_CLIENT_ID / VISA_CLIENT_ID
+   - Used in: msgIdentfctn.clientId in request JSON
+   - Purpose: Identify WHICH application/project is making the request
+
+3. **Merchant/Acceptor Identification** (Request Body - Envt.Accptr)
+   - VISANET_PAYMENT_FACILITY_ID (PaymentFacltId)
+   - VISANET_ACCEPTOR_ID (Accptr)
+   - VISANET_TERMINAL_ID (TermnlId)
+   - Purpose: Identify the MERCHANT processing the transaction
+
+All three are required and serve different purposes!
+
+================================================================================
+REQUEST STRUCTURE SHOWING WHERE EACH CREDENTIAL GOES
+================================================================================
+
+HTTP Request:
+```
+POST https://sandbox.api.visa.com/acs/v3/payments/authorizations
+Authorization: Basic [Base64(VISANET_USER_ID:VISANET_PASSWORD)]  ← Auth credentials
+Content-Type: application/json
+
+{
+  "msgIdentfctn": {
+    "clientId": "[VISANET_CLIENT_ID]",  ← Client identification
+    "correlatnId": "generated-uuid"
+  },
+  "Body": {
+    "Tx": { ... },
+    "Envt": {
+      "Accptr": {
+        "PaymentFacltId": "[VISANET_PAYMENT_FACILITY_ID]",  ← Merchant ID
+        "Accptr": "[VISANET_ACCEPTOR_ID]",                  ← Acceptor ID
+        "CstmrSvc": "1 4155552235",
+        "Adr": { ... }
+      },
+      "Termnl": {
+        "TermnlId": "[VISANET_TERMINAL_ID]",  ← Terminal ID
+        "Cpblties": "2",
+        "CardDataNtryMd": "5",
+        "PINNtryMd": "0"
+      },
+      "Card": { ... }
+    },
+    "Cntxt": { ... }
+  }
+}
+```
+
+================================================================================
+DIAGNOSTIC TEST RESULTS
+================================================================================
+
+Test Run: November 19, 2025 19:26:33
+
+Configuration Check Results:
+```
+✅ MLE Configuration: ENABLED
+   - Key ID: 68d1367c-6766-49fe-b8ef-bbc7d4763949
+   - Encryption: RSA-OAEP-SHA256
+   - Client Certificate: Found
+   - Server Certificate: Found
+   - Private Key: Found
+
+❌ API Configuration: INCOMPLETE
+   - Client ID: NOT SET (ERROR - Required!)
+   - Payment Facility ID: vdcuntdbkafricang
+   - Acceptor ID: vdcuntdbkafricang
+   - Terminal ID: NOT SET (ERROR - Required!)
+```
+
+Test Output:
+```
+2025-11-19 19:26:33 info: [VisaNet] Encrypting card data with MLE
+2025-11-19 19:26:33 info: MLE encryption successful
+2025-11-19 19:26:33 info: Initiating payment authorization
+2025-11-19 19:26:34 error: Request failed: 400
+2025-11-19 19:26:34 error: Authorization failed
+
+Error Response:
+{
+  "responseStatus": {
+    "status": 400,
+    "code": "9125",
+    "severity": "ERROR",
+    "message": "Expected input credential was not present",
+    "info": ""
+  }
+}
+```
+
+================================================================================
+VISA SUPPORT TICKET UPDATE
+================================================================================
+
+Dear Nikolay,
+
+Thank you for your assistance with the Error 9125 issue.
+
+After running diagnostic tests, I have identified the root cause:
+
+**Missing Credentials:**
+1. Client ID (msgIdentfctn.clientId) - not properly configured
+2. Terminal ID (Body.Envt.Termnl.TermnlId) - not set
+
+**Current Status:**
+- MLE encryption: ✅ Working correctly
+- Payment Facility ID: ✅ Set (vdcuntdbkafricang)
+- Acceptor ID: ✅ Set (vdcuntdbkafricang)
+- Client ID: ❌ Not set (causing error 9125)
+- Terminal ID: ❌ Not set
+
+**Question for Visa Support:**
+Could you please confirm where I can find the correct Client ID for my VDP account?
+I have checked:
+- Visa Developer Portal → Dashboard
+- Project Settings
+- Credentials section
+
+Is the Client ID:
+a) The same as the User ID used for Basic Authentication?
+b) A separate Application ID from the project settings?
+c) Provided in a different location in the portal?
+
+Once I have the correct Client ID and Terminal ID, I will update the configuration
+and retest.
+
+**Repository:** https://github.com/RydlrCS/visanet-api
+**Current Configuration:**
+- Payment Facility ID: vdcuntdbkafricang
+- Acceptor ID: vdcuntdbkafricang
+- MLE Key ID: 68d1367c-6766-49fe-b8ef-bbc7d4763949
+
+Best regards,
+Ted
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+Priority Actions:
+
+1. ✅ COMPLETED: Identified root cause of error 9125
+   - Missing VISANET_CLIENT_ID
+   - Missing VISANET_TERMINAL_ID
+
+2. ⏳ IN PROGRESS: Contact Visa support to obtain correct Client ID
+   - Check Visa Developer Portal
+   - Review project credentials
+   - Confirm with Nikolay Orlenko
+
+3. ⏳ PENDING: Update .env file with correct credentials
+   - Add VISANET_CLIENT_ID=correct_value
+   - Add VISANET_TERMINAL_ID=correct_value
+
+4. ⏳ PENDING: Retest authorization flow
+   - Run: node scripts/test-visanet-with-mle.js
+   - Verify error 9125 is resolved
+   - Capture successful authorization or new error code
+
+5. ⏳ PENDING: Document resolution
+   - Update PAYMENT_FACILITY_ID_GUIDE.md
+   - Add troubleshooting section
+   - Include all required credentials
+
+6. ⏳ PENDING: Update repository
+   - Commit changes to main branch
+   - Push to GitHub
+   - Update documentation
+
+================================================================================
+TEST SUITE STATUS (UNCHANGED)
+================================================================================
+
+All unit/integration tests passing:
+- Test Suites: 7 passed, 7 total
+- Tests: 93 passed, 93 total
+- Coverage: Good
+
+Unit tests use mocked API responses and are not affected by missing credentials.
+Live API testing requires actual Visa credentials to proceed.
+
+================================================================================
+CREDENTIALS CHECKLIST
+================================================================================
+
+Before testing with live Visa API, ensure ALL of these are configured:
+
+Authentication:
+☐ VISANET_USER_ID - Username for Basic Auth
+☐ VISANET_PASSWORD - Password for Basic Auth
+
+API Configuration:
+☐ VISANET_CLIENT_ID - Client/Application ID for request body ⚠️ MISSING
+☐ VISANET_PAYMENT_FACILITY_ID - Payment Facilitator ID
+☐ VISANET_ACCEPTOR_ID - Merchant/Acceptor ID
+☐ VISANET_TERMINAL_ID - Terminal/POS ID ⚠️ MISSING
+
+MLE Encryption:
+☐ VISANET_MLE_KEY_ID - Encryption key identifier
+☐ VISANET_MLE_CLIENT_CERT - Client certificate path
+☐ VISANET_MLE_PRIVATE_KEY - Private key path
+☐ VISANET_MLE_SERVER_CERT - Server public key path
+
+Merchant Details:
+☐ VISANET_CUSTOMER_SERVICE - Customer service phone
+☐ VISANET_ACCEPTOR_ZIP - Merchant ZIP code
+☐ VISANET_ACCEPTOR_COUNTRY_ALPHA2 - Country code (US)
+☐ VISANET_ACCEPTOR_STATE_CODE - State code (06 for CA)
+☐ VISANET_ACCEPTOR_COUNTY_CODE - County code
+
+================================================================================
+RESOLUTION STATUS
+================================================================================
+
+Status: ROOT CAUSE IDENTIFIED - AWAITING CREDENTIALS
+
+Error 9125 Cause: Missing Client ID and Terminal ID in configuration
+Resolution: Obtain correct values from Visa Developer Portal and update .env
+Timeline: Pending response from Visa support / portal verification
+
+Once credentials are updated:
+- Expected: Error 9125 will be resolved
+- Possible: May encounter different errors if other issues exist
+- Goal: Successful authorization response from Visa API
+
+================================================================================
+END OF UPDATED REPORT
+================================================================================
+
+Generated: November 19, 2025 19:27:00
+Last Updated: After diagnostic test revealing missing credentials
+Status: AWAITING CLIENT_ID AND TERMINAL_ID FROM VISA PORTAL
+
+Next Action: Check Visa Developer Portal for Client ID and Terminal ID
+
+For questions, refer to:
+- Repository: https://github.com/RydlrCS/visanet-api
+- Documentation: docs/PAYMENT_FACILITY_ID_GUIDE.md
+- This Report: PAYMENT_FACILITY_ISSUE_RESOLUTION.txt

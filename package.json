@@ -36,8 +36,9 @@
     "https": "^1.0.0",
     "jsonwebtoken": "^9.0.2",
     "moment": "^2.29.4",
-    "mongoose": "^8.0.3",
+    "mongoose": "^8.20.0",
     "morgan": "^1.10.0",
+    "mysql2": "^3.15.3",
     "uuid": "^9.0.1",
     "winston": "^3.11.0"
   },

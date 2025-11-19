@@ -65,15 +65,15 @@ export const Button: React.FC<ButtonProps> = ({
    */
   const getVariantClasses = (): string => {
     const variants = {
-      primary: 'bg-primary hover:bg-primary-dark text-white',
-      secondary: 'bg-secondary hover:bg-secondary-dark text-white',
-      danger: 'bg-danger hover:bg-danger-dark text-white',
-      success: 'bg-success hover:bg-success-dark text-white',
+      primary: 'bg-primary-600 hover:bg-primary-700 text-white focus:ring-primary-500',
+      secondary: 'bg-secondary-500 hover:bg-secondary-600 text-white focus:ring-secondary-400',
+      danger: 'bg-danger hover:bg-danger-dark text-white focus:ring-danger',
+      success: 'bg-success hover:bg-success-dark text-white focus:ring-success',
     };
     return variants[variant];
   };
 
-  const baseClasses = 'px-4 py-2 rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2';
+  const baseClasses = 'px-4 py-3 rounded-lg font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 transform hover:scale-[1.02] active:scale-[0.98]';
   const widthClasses = fullWidth ? 'w-full' : '';
   const disabledClasses = disabled || loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer';
   const variantClasses = getVariantClasses();

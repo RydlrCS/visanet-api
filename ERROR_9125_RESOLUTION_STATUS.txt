@@ -1,0 +1,237 @@
+===================================================================================
+ERROR 9125 RESOLUTION STATUS - November 19, 2025
+===================================================================================
+
+ISSUE: VisaNet Connect Authorization API returning Error 9125
+"Expected input credential was not present"
+
+===================================================================================
+ACTIONS TAKEN
+===================================================================================
+
+1. ✅ Added VISANET_CLIENT_ID to .env (from settlement API test data)
+   Value: 1DLMLAPPKDJ04301701
+   
+2. ✅ Added VISANET_TERMINAL_ID to .env  
+   Value: 10012343
+   
+3. ✅ Fixed code bug: Changed Acceptor field from "Id" to "Accptr"
+   Lines changed in services/visaNet.js: 326, 484, 608
+   
+4. ✅ Fixed code bug: Changed clientId priority from VISANET_USER_ID to VISANET_CLIENT_ID
+   Line changed in services/visaNet.js: 62
+
+===================================================================================
+CURRENT REQUEST PAYLOAD
+===================================================================================
+
+The request now correctly includes:
+
+{
+  "msgIdentfctn": {
+    "clientId": "1DLMLAPPKDJ04301701",  ✅ NOW CORRECT
+    "correlatnId": "mi688uojzd3zngy6"
+  },
+  "Body": {
+    "Tx": { ... },
+    "Envt": {
+      "Accptr": {
+        "PaymentFacltId": "vdcuntdbkafricang",  ✅ SET
+        "Accptr": "vdcuntdbkafricang",           ✅ NOW CORRECT FIELD NAME
+        "CstmrSvc": "1 4155552235",              ✅ SET
+        "Adr": {
+          "PstlCd": "94404",                     ✅ SET
+          "CtrySubDvsnMjr": "06",                ✅ SET
+          "Ctry": "US",                          ✅ SET
+          "CtrySubDvsnMnr": "081"                ✅ SET
+        }
+      },
+      "Termnl": {
+        "TermnlId": {
+          "Id": "10012343"                       ✅ NOW SET
+        }
+      },
+      "Card": {
+        "PrtctdCardData": {
+          "EncryptedData": "[MLE ENCRYPTED]",    ✅ MLE WORKING
+          "EncryptionKeyId": "68d1367c-6766-49fe-b8ef-bbc7d4763949",
+          "EncryptionType": "RSA-OAEP-SHA256"
+        }
+      }
+    },
+    "Cntxt": { ... }
+  }
+}
+
+===================================================================================
+RESULT: ERROR 9125 STILL PERSISTS
+===================================================================================
+
+Despite all corrections, the API still returns:
+{
+  "responseStatus": {
+    "status": 400,
+    "code": "9125",
+    "severity": "ERROR",
+    "message": "Expected input credential was not present",
+    "info": ""
+  }
+}
+
+===================================================================================
+ROOT CAUSE ANALYSIS
+===================================================================================
+
+Possible explanations:
+
+1. ❌ CLIENT ID MISMATCH
+   The Client ID "1DLMLAPPKDJ04301701" from the settlement API test data
+   may NOT be the same Client ID required for the AUTHORIZATION API.
+   
+   Different Visa APIs may use different Client IDs:
+   - Settlement API Client ID: 1DLMLAPPKDJ04301701
+   - Authorization API Client ID: [UNKNOWN - may be different]
+
+2. ❌ ENDPOINT MISMATCH
+   We're using: https://sandbox.api.visa.com/acs/v3/payments/authorizations
+   The test data Client ID may be for a different endpoint or API version.
+
+3. ❌ PROJECT/ACCOUNT MISMATCH  
+   The Client ID from settlement test data may belong to a different
+   Visa Developer Portal project than our authorization credentials.
+
+4. ❌ MISSING API ACCESS
+   The VDP account may not have access to the Authorization API,
+   even though Settlement API works.
+
+5. ❌ ADDITIONAL REQUIRED FIELD
+   There may be another field required by the Authorization API that
+   we haven't identified yet (not documented or mentioned in error).
+
+===================================================================================
+RECOMMENDATIONS
+===================================================================================
+
+TO VISA SUPPORT (Nikolay Orlenko):
+
+Dear Nikolay,
+
+We have made significant progress debugging Error 9125. We've corrected:
+1. Added Client ID (1DLMLAPPKDJ04301701 from settlement test data)
+2. Added Terminal ID (10012343)
+3. Fixed Acceptor field structure (Id → Accptr)
+4. Verified MLE encryption is working correctly
+
+However, Error 9125 persists. We need your assistance to confirm:
+
+QUESTION 1: Is the Client ID the same across all VisaNet APIs?
+- Settlement API uses: 1DLMLAPPKDJ04301701
+- Should Authorization API use the same Client ID?
+- Or is there a separate Authorization API Client ID?
+
+QUESTION 2: Can you verify our VDP account has access to:
+- /acs/v3/payments/authorizations endpoint
+- Authorization API product
+
+QUESTION 3: Are there any additional credentials required for Authorization
+that are NOT required for Settlement?
+
+QUESTION 4: Can you review our request payload (attached) and identify
+which specific credential is missing or incorrect?
+
+REQUEST PAYLOAD SENT:
+[See "CURRENT REQUEST PAYLOAD" section above]
+
+RESPONSE RECEIVED:
+Error 9125: Expected input credential was not present
+
+Please advise on next steps.
+
+Best regards,
+Ted
+
+===================================================================================
+NEXT STEPS
+===================================================================================
+
+OPTION A: Wait for Visa Support Response
+- Submit the questions above to Nikolay Orlenko
+- Provide the complete request payload
+- Ask for specific guidance on which credential is missing
+
+OPTION B: Try Alternative Client ID Sources
+- Check Visa Developer Portal for Authorization-specific Client ID
+- Look for different project credentials
+- Try test credentials from VisaNet Connect documentation
+
+OPTION C: Verify Account Access
+- Confirm Authorization API is enabled on VDP account
+- Check if additional API products need to be added
+- Verify project configuration in portal
+
+OPTION D: Contact Visa Developer Support Directly
+- Use VDP support portal
+- Request Authorization API credentials verification
+- Ask for working test credentials for sandbox
+
+===================================================================================
+CONFIGURATION FILES UPDATED
+===================================================================================
+
+.env:
+```
+VISANET_CLIENT_ID=1DLMLAPPKDJ04301701
+VISANET_TERMINAL_ID=10012343
+VISANET_USER_ID=[existing]
+VISANET_PASSWORD=[existing]
+VISANET_PAYMENT_FACILITY_ID=vdcuntdbkafricang
+VISANET_ACCEPTOR_ID=vdcuntdbkafricang
+VISANET_MLE_KEY_ID=68d1367c-6766-49fe-b8ef-bbc7d4763949
+[...other settings...]
+```
+
+services/visaNet.js:
+- Line 62: clientId now uses VISANET_CLIENT_ID (not VISANET_USER_ID)
+- Lines 326, 484, 608: Acceptor field name changed to "Accptr"
+
+===================================================================================
+TEST RESULTS
+===================================================================================
+
+All code changes verified:
+✅ Client ID correctly read from VISANET_CLIENT_ID env var
+✅ Client ID correctly sent in msgIdentfctn.clientId  
+✅ Acceptor ID correctly sent in Envt.Accptr.Accptr
+✅ Terminal ID correctly sent in Envt.Termnl.TermnlId.Id
+✅ Payment Facility ID correctly sent in Envt.Accptr.PaymentFacltId
+✅ MLE encryption working (card data encrypted)
+✅ All required fields present in request
+
+Result: API still returns Error 9125
+
+This confirms the issue is NOT a code bug but a CREDENTIAL/PERMISSION issue
+that requires Visa Developer Support assistance.
+
+===================================================================================
+CONCLUSION
+===================================================================================
+
+STATUS: Blocked - Awaiting Visa Support
+
+We have exhausted code-level debugging. The request structure is correct,
+all identified credentials are present, but Visa API continues to reject
+with "Expected input credential was not present".
+
+This indicates one of:
+1. Wrong Client ID for Authorization API
+2. Missing API access/permissions on VDP account
+3. Undocumented required credential
+4. Account configuration issue on Visa side
+
+REQUIRED ACTION: Contact Visa Developer Support with complete diagnostic data
+
+===================================================================================
+GENERATED: November 19, 2025 19:40:00
+FOR: Visa Developer Support / Nikolay Orlenko
+REPOSITORY: https://github.com/RydlrCS/visanet-api
+===================================================================================

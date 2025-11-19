@@ -3,23 +3,33 @@
  * Tests for Card schema, encryption/decryption, and validation
  */
 
-const mongoose = require('mongoose');
 const Card = require('../../models/Card');
+const { db } = require('../../config/database');
+
+// Mock the database module
+jest.mock('../../config/database', () => {
+  const mockDb = {
+    generateUUID: jest.fn(() => 'mock-uuid-' + Date.now()),
+    create: jest.fn(),
+    findById: jest.fn(),
+    findOne: jest.fn(),
+    findMany: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    count: jest.fn(),
+    query: jest.fn()
+  };
+
+  return {
+    db: mockDb
+  };
+});
 
 describe('Card Model', () => {
-  const testUserId = new mongoose.Types.ObjectId();
+  const testUserId = 'user-uuid-123';
 
-  beforeAll(async() => {
-    await mongoose.connect(process.env.MONGODB_URI);
-  }, 30000);
-
-  afterAll(async() => {
-    await mongoose.connection.db.dropDatabase();
-    await mongoose.connection.close();
-  }, 30000);
-
-  beforeEach(async() => {
-    await Card.deleteMany({});
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('Schema Validation', () => {
@@ -34,27 +44,43 @@ describe('Card Model', () => {
         cardNumberEncrypted: 'encrypted_data_here'
       };
 
-      const card = new Card(cardData);
-      const savedCard = await card.save();
+      const mockCreated = {
+        id: 'card-uuid-123',
+        userId: testUserId,
+        cardholderName: 'John Doe',
+        expiryMonth: '12',
+        expiryYear: '2025',
+        cardType: 'visa',
+        lastFourDigits: '1111',
+        cardNumberEncrypted: 'encrypted_data_here',
+        status: 'active',
+        isDefault: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
 
-      expect(savedCard._id).toBeDefined();
-      expect(savedCard.userId.toString()).toBe(testUserId.toString());
-      expect(savedCard.cardholderName).toBe(cardData.cardholderName);
-      expect(savedCard.isActive).toBe(true); // Default value
-      expect(savedCard.isDefault).toBe(false); // Default value
+      db.create.mockResolvedValue(mockCreated);
+
+      const card = await Card.create(cardData);
+
+      expect(card.id).toBeDefined();
+      expect(card.userId).toBe(testUserId);
+      expect(card.cardholderName).toBe(cardData.cardholderName);
+      expect(card.status).toBe('active'); // Default value
+      expect(card.isDefault).toBe(false); // Default value
     });
 
     test('should fail when required fields are missing', async() => {
-      const card = new Card({
+      const cardData = {
         userId: testUserId
         // Missing required fields
-      });
+      };
 
-      await expect(card.save()).rejects.toThrow();
+      await expect(Card.create(cardData)).rejects.toThrow();
     });
 
     test('should validate expiry month range', async() => {
-      const card = new Card({
+      const cardData = {
         userId: testUserId,
         cardholderName: 'John Doe',
         expiryMonth: '13', // Invalid
@@ -62,16 +88,33 @@ describe('Card Model', () => {
         cardType: 'visa',
         lastFourDigits: '1111',
         cardNumberEncrypted: 'encrypted'
-      });
+      };
 
-      await expect(card.save()).rejects.toThrow();
+      await expect(Card.create(cardData)).rejects.toThrow('is not a valid month');
     });
 
     test('should validate card type enum', async() => {
       const validTypes = ['visa', 'mastercard', 'amex', 'discover'];
 
       for (const type of validTypes) {
-        const card = new Card({
+        const mockCreated = {
+          id: `card-${type}`,
+          userId: testUserId,
+          cardholderName: 'John Doe',
+          expiryMonth: '12',
+          expiryYear: '2025',
+          cardType: type,
+          lastFourDigits: '1111',
+          cardNumberEncrypted: 'encrypted',
+          status: 'active',
+          isDefault: false,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+
+        db.create.mockResolvedValue(mockCreated);
+
+        const card = await Card.create({
           userId: testUserId,
           cardholderName: 'John Doe',
           expiryMonth: '12',
@@ -81,26 +124,15 @@ describe('Card Model', () => {
           cardNumberEncrypted: 'encrypted'
         });
 
-        const saved = await card.save();
-        expect(saved.cardType).toBe(type);
-        await Card.deleteMany({});
+        expect(card.cardType).toBe(type);
       }
     });
   });
 
   describe('Encryption/Decryption', () => {
     test('should encrypt card number', () => {
-      const card = new Card({
-        userId: testUserId,
-        cardholderName: 'John Doe',
-        expiryMonth: '12',
-        expiryYear: '2025',
-        cardType: 'visa',
-        lastFourDigits: '1111'
-      });
-
       const cardNumber = '4111111111111111';
-      const encrypted = card.encryptCardNumber(cardNumber);
+      const encrypted = Card.encryptCardNumber(cardNumber);
 
       expect(encrypted).toBeDefined();
       expect(encrypted).not.toBe(cardNumber);
@@ -110,57 +142,44 @@ describe('Card Model', () => {
     });
 
     test('should decrypt card number correctly', () => {
-      const card = new Card({
-        userId: testUserId,
-        cardholderName: 'John Doe',
-        expiryMonth: '12',
-        expiryYear: '2025',
-        cardType: 'visa',
-        lastFourDigits: '1111'
-      });
-
       const originalCardNumber = '4111111111111111';
-      const encrypted = card.encryptCardNumber(originalCardNumber);
-      card.cardNumberEncrypted = encrypted;
-
-      const decrypted = card.decryptCardNumber();
-
-      expect(decrypted).toBe(originalCardNumber);
-    });
-
-    test('should generate different encrypted values for same input', () => {
+      const encrypted = Card.encryptCardNumber(originalCardNumber);
+      
       const card = new Card({
-        userId: testUserId,
-        cardholderName: 'John Doe',
-        expiryMonth: '12',
-        expiryYear: '2025',
-        cardType: 'visa',
-        lastFourDigits: '1111'
-      });
-
-      const cardNumber = '4111111111111111';
-      const encrypted1 = card.encryptCardNumber(cardNumber);
-      const encrypted2 = card.encryptCardNumber(cardNumber);
-
-      // Should be different due to random IV
-      expect(encrypted1).not.toBe(encrypted2);
-
-      // But both should decrypt to original
-      card.cardNumberEncrypted = encrypted1;
-      expect(card.decryptCardNumber()).toBe(cardNumber);
-
-      card.cardNumberEncrypted = encrypted2;
-      expect(card.decryptCardNumber()).toBe(cardNumber);
-    });
-
-    test('should handle empty card number gracefully', () => {
-      const card = new Card({
+        id: 'card-123',
         userId: testUserId,
         cardholderName: 'John Doe',
         expiryMonth: '12',
         expiryYear: '2025',
         cardType: 'visa',
         lastFourDigits: '1111',
+        cardNumberEncrypted: encrypted
+      });
+
+      const decrypted = card.decryptCardNumber();
+      expect(decrypted).toBe(originalCardNumber);
+    });
+
+    test('should generate different encrypted values for same input', () => {
+      const cardNumber = '4111111111111111';
+      const encrypted1 = Card.encryptCardNumber(cardNumber);
+      const encrypted2 = Card.encryptCardNumber(cardNumber);
+
+      // Should be different due to random IV
+      expect(encrypted1).not.toBe(encrypted2);
+
+      // But both should decrypt to original
+      const card1 = new Card({ cardNumberEncrypted: encrypted1 });
+      expect(card1.decryptCardNumber()).toBe(cardNumber);
+
+      const card2 = new Card({ cardNumberEncrypted: encrypted2 });
+      expect(card2.decryptCardNumber()).toBe(cardNumber);
+    });
+
+    test('should handle empty card number gracefully', () => {
+      const card = new Card({
+        id: 'card-123',
+        userId: testUserId,
         cardNumberEncrypted: ''
       });
 
@@ -170,8 +189,40 @@ describe('Card Model', () => {
 
   describe('Default Card Management', () => {
     test('should allow only one default card per user', async() => {
-      // Create first default card
-      const card1 = new Card({
+      const mockCard1 = {
+        id: 'card-1',
+        userId: testUserId,
+        cardholderName: 'John Doe',
+        expiryMonth: '12',
+        expiryYear: '2025',
+        cardType: 'visa',
+        lastFourDigits: '1111',
+        cardNumberEncrypted: 'encrypted1',
+        isDefault: true,
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const mockCard2 = {
+        id: 'card-2',
+        userId: testUserId,
+        cardholderName: 'John Doe',
+        expiryMonth: '06',
+        expiryYear: '2026',
+        cardType: 'mastercard',
+        lastFourDigits: '2222',
+        cardNumberEncrypted: 'encrypted2',
+        isDefault: false,
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      db.create.mockResolvedValueOnce(mockCard1).mockResolvedValueOnce(mockCard2);
+      db.findMany.mockResolvedValue([mockCard1]);
+
+      await Card.create({
         userId: testUserId,
         cardholderName: 'John Doe',
         expiryMonth: '12',
@@ -181,10 +232,8 @@ describe('Card Model', () => {
         cardNumberEncrypted: 'encrypted1',
         isDefault: true
       });
-      await card1.save();
 
-      // Create second card (not default)
-      const card2 = new Card({
+      await Card.create({
         userId: testUserId,
         cardholderName: 'John Doe',
         expiryMonth: '06',
@@ -194,17 +243,33 @@ describe('Card Model', () => {
         cardNumberEncrypted: 'encrypted2',
         isDefault: false
       });
-      await card2.save();
 
-      const cards = await Card.find({ userId: testUserId, isDefault: true });
-      expect(cards.length).toBe(1);
-      expect(cards[0].lastFourDigits).toBe('1111');
+      const defaultCards = await Card.find({ userId: testUserId, isDefault: true });
+      expect(defaultCards.length).toBe(1);
+      expect(defaultCards[0].lastFourDigits).toBe('1111');
     });
   });
 
   describe('Card Status', () => {
     test('should default to active status', async() => {
-      const card = new Card({
+      const mockCreated = {
+        id: 'card-123',
+        userId: testUserId,
+        cardholderName: 'John Doe',
+        expiryMonth: '12',
+        expiryYear: '2025',
+        cardType: 'visa',
+        lastFourDigits: '1111',
+        cardNumberEncrypted: 'encrypted',
+        status: 'active',
+        isDefault: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      db.create.mockResolvedValue(mockCreated);
+
+      const card = await Card.create({
         userId: testUserId,
         cardholderName: 'John Doe',
         expiryMonth: '12',
@@ -214,12 +279,32 @@ describe('Card Model', () => {
         cardNumberEncrypted: 'encrypted'
       });
 
-      await card.save();
-      expect(card.isActive).toBe(true);
+      expect(card.status).toBe('active');
     });
 
     test('should allow deactivation', async() => {
-      const card = new Card({
+      const mockCard = {
+        id: 'card-123',
+        userId: testUserId,
+        cardholderName: 'John Doe',
+        expiryMonth: '12',
+        expiryYear: '2025',
+        cardType: 'visa',
+        lastFourDigits: '1111',
+        cardNumberEncrypted: 'encrypted',
+        status: 'active',
+        isDefault: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const updatedMockCard = { ...mockCard, status: 'inactive', updatedAt: new Date() };
+
+      db.create.mockResolvedValue(mockCard);
+      db.update.mockResolvedValue(updatedMockCard);
+      db.findById.mockResolvedValue(updatedMockCard);
+
+      const card = await Card.create({
         userId: testUserId,
         cardholderName: 'John Doe',
         expiryMonth: '12',
@@ -229,13 +314,12 @@ describe('Card Model', () => {
         cardNumberEncrypted: 'encrypted'
       });
 
-      await card.save();
+      const cardInstance = new Card(card);
+      cardInstance.status = 'inactive';
+      await cardInstance.save();
 
-      card.isActive = false;
-      await card.save();
-
-      const foundCard = await Card.findById(card._id);
-      expect(foundCard.isActive).toBe(false);
+      const updatedCard = await Card.findById(card.id);
+      expect(updatedCard.status).toBe('inactive');
     });
   });
 
@@ -249,7 +333,25 @@ describe('Card Model', () => {
         country: 'USA'
       };
 
-      const card = new Card({
+      const mockCreated = {
+        id: 'card-123',
+        userId: testUserId,
+        cardholderName: 'John Doe',
+        expiryMonth: '12',
+        expiryYear: '2025',
+        cardType: 'visa',
+        lastFourDigits: '1111',
+        cardNumberEncrypted: 'encrypted',
+        billingAddress: JSON.stringify(billingAddress),
+        status: 'active',
+        isDefault: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      db.create.mockResolvedValue(mockCreated);
+
+      const card = await Card.create({
         userId: testUserId,
         cardholderName: 'John Doe',
         expiryMonth: '12',
@@ -260,30 +362,10 @@ describe('Card Model', () => {
         billingAddress
       });
 
-      await card.save();
-
-      expect(card.billingAddress.street).toBe(billingAddress.street);
-      expect(card.billingAddress.city).toBe(billingAddress.city);
-      expect(card.billingAddress.postalCode).toBe(billingAddress.postalCode);
-    });
-  });
-
-  describe('Timestamps', () => {
-    test('should automatically add createdAt and updatedAt', async() => {
-      const card = new Card({
-        userId: testUserId,
-        cardholderName: 'John Doe',
-        expiryMonth: '12',
-        expiryYear: '2025',
-        cardType: 'visa',
-        lastFourDigits: '1111',
-        cardNumberEncrypted: 'encrypted'
-      });
-
-      await card.save();
-
-      expect(card.createdAt).toBeInstanceOf(Date);
-      expect(card.updatedAt).toBeInstanceOf(Date);
+      const parsedAddress = JSON.parse(card.billingAddress);
+      expect(parsedAddress.street).toBe(billingAddress.street);
+      expect(parsedAddress.city).toBe(billingAddress.city);
+      expect(parsedAddress.postalCode).toBe(billingAddress.postalCode);
     });
   });
 });

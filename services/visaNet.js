@@ -59,7 +59,7 @@ class VisaNetService {
     }
 
     // Use VisaNet Connect credentials
-    this.clientId = process.env.VISANET_USER_ID || process.env.VISA_CLIENT_ID || '1VISAGCT000001';
+    this.clientId = process.env.VISANET_CLIENT_ID || process.env.VISA_CLIENT_ID || '1VISAGCT000001';
 
     // Default acceptor information
     this.defaultAcceptor = {
@@ -323,7 +323,7 @@ class VisaNetService {
           Envt: {
             Accptr: acceptor || {
               PaymentFacltId: this.defaultAcceptor.paymentFacilityId,
-              Id: this.defaultAcceptor.acceptorId,
+              Accptr: this.defaultAcceptor.acceptorId,
               CstmrSvc: this.defaultAcceptor.customerService,
               Adr: {
                 PstlCd: this.defaultAcceptor.address.postalCode,
@@ -481,7 +481,7 @@ class VisaNetService {
           Envt: {
             Accptr: acceptor || {
               PaymentFacltId: this.defaultAcceptor.paymentFacilityId,
-              Id: this.defaultAcceptor.acceptorId,
+              Accptr: this.defaultAcceptor.acceptorId,
               CstmrSvc: this.defaultAcceptor.customerService,
               Adr: {
                 PstlCd: this.defaultAcceptor.address.postalCode,
@@ -605,7 +605,7 @@ class VisaNetService {
           Envt: {
             Accptr: acceptor || {
               PaymentFacltId: this.defaultAcceptor.paymentFacilityId,
-              Id: this.defaultAcceptor.acceptorId,
+              Accptr: this.defaultAcceptor.acceptorId,
               CstmrSvc: this.defaultAcceptor.customerService,
               Adr: {
                 PstlCd: this.defaultAcceptor.address.postalCode,

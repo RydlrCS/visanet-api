@@ -26,26 +26,20 @@ router.post('/push', [
     const { amount, recipientCard, currency, description } = req.body;
 
     // Create transaction record
-    const transaction = new Transaction({
-      transactionId: generateTransactionId(),
+    const transaction = await Transaction.create({
       userId: req.user.id,
       type: 'push',
       amount,
       currency: currency || 'USD',
       status: 'pending',
-      recipientCard: {
-        cardNumber: recipientCard.number,
-        lastFourDigits: recipientCard.number.slice(-4),
-        cardType: detectCardType(recipientCard.number)
-      },
       metadata: {
-        description
+        description,
+        recipientCardLast4: recipientCard.number.slice(-4),
+        recipientCardType: detectCardType(recipientCard.number)
       },
       ipAddress: req.ip,
       userAgent: req.get('user-agent')
     });
-
-    await transaction.save();
 
     // Call Visa Direct API
     const result = await visaDirectService.pushPayment({
@@ -60,26 +54,26 @@ router.post('/push', [
     });
 
     if (result.success) {
-      transaction.status = 'processing';
-      transaction.visaTransactionId = result.transactionId;
-      transaction.timestamps.processed = new Date();
-      await transaction.save();
+      await Transaction.updateById(transaction.id, {
+        status: 'processing',
+        visaTransactionId: result.transactionId
+      });
 
       res.status(200).json({
         success: true,
         message: 'Payment initiated successfully',
         transaction: {
-          id: transaction._id,
-          transactionId: transaction.transactionId,
+          id: transaction.id,
           amount,
           currency: currency || 'USD',
-          status: transaction.status
+          status: 'processing'
         }
       });
     } else {
-      transaction.status = 'failed';
-      transaction.errorDetails = result.error;
-      await transaction.save();
+      await Transaction.updateById(transaction.id, {
+        status: 'failed',
+        errorDetails: result.error
+      });
 
       res.status(400).json({
         success: false,
@@ -116,26 +110,20 @@ router.post('/pull', [
 
     const { amount, senderCard, currency, description } = req.body;
 
-    const transaction = new Transaction({
-      transactionId: generateTransactionId(),
+    const transaction = await Transaction.create({
       userId: req.user.id,
       type: 'pull',
       amount,
       currency: currency || 'USD',
       status: 'pending',
-      senderCard: {
-        cardNumber: senderCard.number,
-        lastFourDigits: senderCard.number.slice(-4),
-        cardType: detectCardType(senderCard.number)
-      },
       metadata: {
-        description
+        description,
+        senderCardLast4: senderCard.number.slice(-4),
+        senderCardType: detectCardType(senderCard.number)
       },
       ipAddress: req.ip,
       userAgent: req.get('user-agent')
     });
-
-    await transaction.save();
 
     const result = await visaDirectService.pullFunds({
       amount,
@@ -147,26 +135,26 @@ router.post('/pull', [
     });
 
     if (result.success) {
-      transaction.status = 'processing';
-      transaction.visaTransactionId = result.transactionId;
-      transaction.timestamps.processed = new Date();
-      await transaction.save();
+      await Transaction.updateById(transaction.id, {
+        status: 'processing',
+        visaTransactionId: result.transactionId
+      });
 
       res.status(200).json({
         success: true,
         message: 'Pull request initiated successfully',
         transaction: {
-          id: transaction._id,
-          transactionId: transaction.transactionId,
+          id: transaction.id,
           amount,
           currency: currency || 'USD',
-          status: transaction.status
+          status: 'processing'
         }
       });
     } else {
-      transaction.status = 'failed';
-      transaction.errorDetails = result.error;
-      await transaction.save();
+      await Transaction.updateById(transaction.id, {
+        status: 'failed',
+        errorDetails: result.error
+      });
 
       res.status(400).json({
         success: false,
@@ -194,22 +182,22 @@ router.get('/', auth, async(req, res) => {
   try {
     const { page = 1, limit = 20, status, type } = req.query;
 
-    const query = { userId: req.user.id };
-    if (status) query.status = status;
-    if (type) query.type = type;
+    const conditions = { userId: req.user.id };
+    if (status) conditions.status = status;
+    if (type) conditions.type = type;
 
-    const transactions = await Transaction.find(query)
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .exec();
+    const transactions = await Transaction.find(conditions, {
+      orderBy: [{ field: 'createdAt', direction: 'DESC' }],
+      limit: parseInt(limit),
+      offset: (parseInt(page) - 1) * parseInt(limit)
+    });
 
-    const count = await Transaction.countDocuments(query);
+    const count = await Transaction.count(conditions);
 
     res.json({
       transactions,
       totalPages: Math.ceil(count / limit),
-      currentPage: page,
+      currentPage: parseInt(page),
       total: count
     });
 
@@ -226,12 +214,9 @@ router.get('/', auth, async(req, res) => {
  */
 router.get('/:id', auth, async(req, res) => {
   try {
-    const transaction = await Transaction.findOne({
-      _id: req.params.id,
-      userId: req.user.id
-    });
+    const transaction = await Transaction.findById(req.params.id);
 
-    if (!transaction) {
+    if (!transaction || transaction.userId !== req.user.id) {
       return res.status(404).json({ message: 'Transaction not found' });
     }
 

@@ -1,0 +1,195 @@
+2025-11-19 19:45:34:4534 [37mdebug[39m: [37mCreating MLE encryption singleton instance[39m
+2025-11-19 19:45:34:4534 [37mdebug[39m: [37mInitializing MLE encryption utility[39m
+2025-11-19 19:45:34:4534 [32minfo[39m: [32mMLE Configuration Status[39m
+2025-11-19 19:45:34:4534 [32minfo[39m: [32mMLE encryption utility initialized[39m
+2025-11-19 19:45:34:4534 [32minfo[39m: [32m[VisaNet] Initializing VisaNet Connect service[39m
+2025-11-19 19:45:34:4534 [37mdebug[39m: [37mVerifying MLE configuration[39m
+2025-11-19 19:45:34:4534 [37mdebug[39m: [37mClient certificate found for visaNet[39m
+2025-11-19 19:45:34:4534 [37mdebug[39m: [37mServer certificate found for visaNet[39m
+2025-11-19 19:45:34:4534 [37mdebug[39m: [37mPrivate key found for visaNet[39m
+2025-11-19 19:45:34:4534 [32minfo[39m: [32mMLE configuration verified for visaNet[39m
+2025-11-19 19:45:34:4534 [32minfo[39m: [32m[VisaNet] MLE encryption enabled[39m
+
+╔════════════════════════════════════════════════════════════════╗
+║   DIAGNOSTIC DATA CAPTURE FOR VISA DEVELOPER SUPPORT          ║
+║   Error 9125 - Complete Request/Response Details              ║
+╚════════════════════════════════════════════════════════════════╝
+
+Executing authorization request...
+
+2025-11-19 19:45:34:4534 [32minfo[39m: [32m[VisaNet] Encrypting card data with MLE[39m
+2025-11-19 19:45:34:4534 [37mdebug[39m: [37mMLE encryption started for visaNet[39m
+2025-11-19 19:45:34:4534 [37mdebug[39m: [37mLoading MLE server certificate from ./certs/mle-server-cert-visa.pem[39m
+2025-11-19 19:45:34:4534 [37mdebug[39m: [37mEncrypting data with Visa's public key[39m
+2025-11-19 19:45:34:4534 [32minfo[39m: [32mMLE encryption successful[39m
+2025-11-19 19:45:34:4534 [32minfo[39m: [32m[VisaNet] Card data encrypted successfully[39m
+2025-11-19 19:45:34:4534 [32minfo[39m: [32mInitiating payment authorization[39m
+2025-11-19 19:45:34:4534 [32minfo[39m: [32mMaking POST request to https://sandbox.api.visa.com/acs/v3/payments/authorizations[39m
+2025-11-19 19:45:34:4534 [37mdebug[39m: [37mRequest payload[39m
+2025-11-19 19:45:35:4535 [31merror[39m: [31mRequest failed: 400[39m
+2025-11-19 19:45:35:4535 [31merror[39m: [31mAuthorization failed[39m
+❌ Authorization failed with Error 9125 (expected)
+
+════════════════════════════════════════════════════════════════════════════════
+VISA DEVELOPER SUPPORT - DIAGNOSTIC REPORT
+Error: 9125 - Expected input credential was not present
+Contact: Nikolay Orlenko
+Date: 11/19/2025, 8:45:35 AM
+Repository: https://github.com/RydlrCS/visanet-api
+════════════════════════════════════════════════════════════════════════════════
+
+1️⃣  ENDPOINT
+────────────────────────────────────────────────────────────────────────────────
+Method:   POST
+URL:      https://sandbox.api.visa.com/acs/v3/payments/authorizations
+
+2️⃣  REQUEST HEADERS
+────────────────────────────────────────────────────────────────────────────────
+Content-Type: application/json
+Accept: application/json
+Authorization: Basic [REDACTED - Base64 encoded]
+
+3️⃣  REQUEST BODY
+────────────────────────────────────────────────────────────────────────────────
+{
+  "msgIdentfctn": {
+    "clientId": "1DLMLAPPKDJ04301701",
+    "correlatnId": "mi68hbndwiz07f65"
+  },
+  "Body": {
+    "Tx": {
+      "TxAttr": [
+        "INST"
+      ],
+      "TxId": {
+        "LclDtTm": "2025-11-19T16:45:34"
+      },
+      "TxAmts": {
+        "AmtQlfr": "ESTM",
+        "TxAmt": {
+          "Ccy": "840",
+          "Amt": "10"
+        }
+      }
+    },
+    "Envt": {
+      "Accptr": {
+        "PaymentFacltId": "vdcuntdbkafricang",
+        "Accptr": "vdcuntdbkafricang",
+        "CstmrSvc": "1 4155552235",
+        "Adr": {
+          "PstlCd": "94404",
+          "CtrySubDvsnMjr": "06",
+          "Ctry": "US",
+          "CtrySubDvsnMnr": "081"
+        }
+      },
+      "Termnl": {
+        "TermnlId": {
+          "Id": "10012343"
+        }
+      },
+      "Card": {
+        "PrtctdCardData": {
+          "CardSeqNb": "01",
+          "XpryDt": "2512",
+          "EncryptedData": "eKsXyhPy8hLX2T3ilbmw1F7Ye/74lsxRS3+4maRAHhffu7zyD52rAO7ZpeseKMJJF+zrQWL+7dQ625Nn3Znfu723kuowEfCNguIHFp6AiWgQOnL1OQ01TdeV4kByvijUEy+dwGb+Vqu7AgVXafRaz0pAMrAw9iA2iuH6HjGkyhsPT0WBSd4kOJdR2wG2Nl0qxc8VXd87+HBYky1BbktgCenOTPYdUsVUNM8JjF9AqeXWFLiWMDXSnuAkrDesyR/OXhbWi8QWdOA8dHXrh0vRL1YF3+QMggqQaE2vUpf6TrsRxVa+YPHoI6cmx88ZCun5EB9VwM/N1ItK+8NAnA/aUA==",
+          "EncryptionKeyId": "68d1367c-6766-49fe-b8ef-bbc7d4763949",
+          "EncryptionType": "RSA-OAEP-SHA256"
+        }
+      }
+    },
+    "Cntxt": {
+      "Vrfctn": [
+        {
+          "VrfctnInf": {
+            "Val": {
+              "TxtVal": "123"
+            }
+          },
+          "Tp": "CSCV"
+        }
+      ],
+      "TxCntxt": {
+        "MrchntCtgyCd": "6012"
+      },
+      "PtOfSvcCntxt": {
+        "CardDataNtryMd": "CICC"
+      }
+    }
+  }
+}
+
+4️⃣  RESPONSE HEADERS (including x-correlation-id)
+────────────────────────────────────────────────────────────────────────────────
+HTTP Status Code: Unknown
+
+Not captured
+
+5️⃣  RESPONSE BODY
+────────────────────────────────────────────────────────────────────────────────
+Not captured
+
+════════════════════════════════════════════════════════════════════════════════
+
+📋 CONFIGURATION SUMMARY
+────────────────────────────────────────────────────────────────────────────────
+Client ID:           1DLMLAPPKDJ04301701
+User ID (Auth):      [SET - Redacted]
+Password (Auth):     [SET - Redacted]
+Payment Facility ID: vdcuntdbkafricang
+Acceptor ID:         vdcuntdbkafricang
+Terminal ID:         10012343
+MLE Key ID:          68d1367c-6766-49fe-b8ef-bbc7d4763949
+MLE Encryption:      ENABLED
+
+✅ Full diagnostic data saved to: VISA_SUPPORT_DIAGNOSTIC_DATA.json
+════════════════════════════════════════════════════════════════════════════════
+
+📧 EMAIL READY TO SEND TO NIKOLAY ORLENKO
+════════════════════════════════════════════════════════════════════════════════
+
+Copy the text below for your email to Visa Support:
+
+────────────────────────────────────────────────────────────────────────────────
+
+Dear Nikolay,
+
+Thank you for your assistance with Error 9125.
+Below is the complete diagnostic information you requested:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. ENDPOINT:
+   POST https://sandbox.api.visa.com/acs/v3/payments/authorizations
+
+2. REQUEST HEADERS:
+   Content-Type: application/json
+   Accept: application/json
+   Authorization: Basic [Base64 credentials - available if needed]
+
+3. REQUEST BODY:
+   (Full JSON available in attached file, key fields below)
+   clientId: 1DLMLAPPKDJ04301701
+   PaymentFacltId: vdcuntdbkafricang
+   Accptr (Acceptor ID): vdcuntdbkafricang
+   TermnlId: 10012343
+
+4. RESPONSE HEADERS (including x-correlation-id):
+
+5. RESPONSE BODY:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Despite configuring all identified credentials (Client ID: 1DLMLAPPKDJ04301701,
+Payment Facility ID, Acceptor ID, Terminal ID), Error 9125 persists.
+
+Could you please review the request data and advise:
+1. Which specific credential is missing or incorrect?
+2. Is the Client ID correct for the Authorization API?
+3. Are there additional permissions needed on our VDP account?
+
+Full diagnostic data attached: VISA_SUPPORT_DIAGNOSTIC_DATA.json
+
+Best regards,
+Ted
+
+════════════════════════════════════════════════════════════════════════════════

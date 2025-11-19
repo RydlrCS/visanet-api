@@ -26,48 +26,44 @@ router.post('/register', [
     const { email, password, firstName, lastName, phoneNumber, address } = req.body;
 
     // Check if user exists
-    let user = await User.findOne({ email });
-    if (user) {
+    let existingUser = await User.findByEmail(email);
+    if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
     // Create new user
-    user = new User({
+    const user = await User.create({
       email,
       password,
-      firstName,
-      lastName,
-      phoneNumber,
+      businessName: `${firstName} ${lastName}`,
+      phone: phoneNumber,
       address: {
         street: address?.street || '',
         city: address?.city || '',
         state: address?.state || '',
-        zipCode: address?.zipCode || '',
+        postalCode: address?.zipCode || '',
         country: address?.country || 'USA'
       },
       kycStatus: 'pending'
     });
 
-    await user.save();
-
     // Generate JWT token
     const token = jwt.sign(
-      { id: user._id, email: user.email },
+      { id: user.id, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: process.env.JWT_EXPIRATION || '7d' }
     );
 
-    logger.info('User registered:', { userId: user._id, email: user.email });
+    logger.info('User registered:', { userId: user.id, email: user.email });
 
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
       token,
       user: {
-        id: user._id,
+        id: user.id,
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        businessName: user.businessName,
         kycStatus: user.kycStatus
       }
     });
@@ -95,8 +91,8 @@ router.post('/login', [
 
     const { email, password } = req.body;
 
-    // Find user
-    const user = await User.findOne({ email }).select('+password');
+    // Find user (includes password for authentication)
+    const user = await User.findByEmail(email);
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -108,27 +104,25 @@ router.post('/login', [
     }
 
     // Update last login
-    user.lastLogin = new Date();
-    await user.save();
+    await User.updateById(user.id, { lastLogin: new Date() });
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: user._id, email: user.email },
+      { id: user.id, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: process.env.JWT_EXPIRATION || '7d' }
     );
 
-    logger.info('User logged in:', { userId: user._id, email: user.email });
+    logger.info('User logged in:', { userId: user.id, email: user.email });
 
     res.json({
       success: true,
       message: 'Login successful',
       token,
       user: {
-        id: user._id,
+        id: user.id,
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        businessName: user.businessName,
         kycStatus: user.kycStatus
       }
     });
@@ -177,7 +171,7 @@ router.post('/forgot-password', [
   try {
     const { email } = req.body;
 
-    const user = await User.findOne({ email });
+    const user = await User.findByEmail(email);
     if (!user) {
       // Don't reveal if user exists
       return res.json({

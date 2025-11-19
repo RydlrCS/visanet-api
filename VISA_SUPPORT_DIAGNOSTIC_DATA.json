@@ -1,0 +1,96 @@
+{
+  "timestamp": "2025-11-19T16:47:46.174Z",
+  "endpoint": {
+    "method": "POST",
+    "endpoint": "/acs/v3/payments/authorizations",
+    "fullUrl": "https://sandbox.api.visa.com/acs/v3/payments/authorizations"
+  },
+  "requestHeaders": {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+    "Authorization": "Basic [REDACTED]"
+  },
+  "requestBody": {
+    "msgIdentfctn": {
+      "clientId": "1DLMLAPPKDJ04301701",
+      "correlatnId": "mi68k5c0rrom0f7s"
+    },
+    "Body": {
+      "Tx": {
+        "TxAttr": [
+          "INST"
+        ],
+        "TxId": {
+          "LclDtTm": "2025-11-19T16:47:46"
+        },
+        "TxAmts": {
+          "AmtQlfr": "ESTM",
+          "TxAmt": {
+            "Ccy": "840",
+            "Amt": "10"
+          }
+        }
+      },
+      "Envt": {
+        "Accptr": {
+          "PaymentFacltId": "vdcuntdbkafricang",
+          "Accptr": "vdcuntdbkafricang",
+          "CstmrSvc": "1 4155552235",
+          "Adr": {
+            "PstlCd": "94404",
+            "CtrySubDvsnMjr": "06",
+            "Ctry": "US",
+            "CtrySubDvsnMnr": "081"
+          }
+        },
+        "Termnl": {
+          "TermnlId": {
+            "Id": "10012343"
+          }
+        },
+        "Card": {
+          "PrtctdCardData": {
+            "CardSeqNb": "01",
+            "XpryDt": "2512",
+            "EncryptedData": "eVJqrqdrXngDkx/XebpBvjtbP6n+Rvb5jSZe1QUkEOCdFcsIE4itC3G+jSen7ffIk7QVLoZBZwjlXigF//+uho2jfL5f9nF02u/RRacmoFajxOEBzSlNXKACGwurpyau3fZEXNVRWrw+km8XtcYB8XLQ3YBwNlCbrol4fWROVBOM5YBhfa6kfkP/bnvJOh4l3cwjXqmHYExERirb2JswRfcZZnxkqjkVEiS+VLnRShN64fbby8ALyOIf7p8eIf1klix07ktH/507KWdFcjHITRcKGAnCGhi2/F32O961/nSYWIKAmzpisUIuWczLiMWSiZtc7KD8mrDqc7thOFePog==",
+            "EncryptionKeyId": "68d1367c-6766-49fe-b8ef-bbc7d4763949",
+            "EncryptionType": "RSA-OAEP-SHA256"
+          }
+        }
+      },
+      "Cntxt": {
+        "Vrfctn": [
+          {
+            "VrfctnInf": {
+              "Val": {
+                "TxtVal": "123"
+              }
+            },
+            "Tp": "CSCV"
+          }
+        ],
+        "TxCntxt": {
+          "MrchntCtgyCd": "6012"
+        },
+        "PtOfSvcCntxt": {
+          "CardDataNtryMd": "CICC"
+        }
+      }
+    }
+  },
+  "responseHeaders": null,
+  "responseBody": null,
+  "httpStatusCode": null,
+  "error": "API Error: 400 - {\"responseStatus\":{\"status\":400,\"code\":\"9125\",\"severity\":\"ERROR\",\"message\":\"Expected input credential was not present\",\"info\":\"\"}}",
+  "configuration": {
+    "clientId": "1DLMLAPPKDJ04301701",
+    "paymentFacilityId": "vdcuntdbkafricang",
+    "acceptorId": "vdcuntdbkafricang",
+    "terminalId": "10012343",
+    "mleKeyId": "68d1367c-6766-49fe-b8ef-bbc7d4763949",
+    "mleEnabled": true
+  },
+  "note": "Diagnostic data for Visa Support - Error 9125",
+  "contact": "Nikolay Orlenko",
+  "repository": "https://github.com/RydlrCS/visanet-api"
+}

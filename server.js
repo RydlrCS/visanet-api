@@ -19,7 +19,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Connect to Database
-connectDB();
+connectDB().catch(err => {
+  logger.error('Failed to connect to database:', err);
+  process.exit(1);
+});
 
 // Security Middleware
 app.use(helmet());
@@ -52,13 +55,27 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // Health Check
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV
-  });
+app.get('/health', async (req, res) => {
+  try {
+    const { getPool } = require('./config/database');
+    const pool = getPool();
+    await pool.query('SELECT 1');
+    
+    res.status(200).json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV,
+      database: 'connected'
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      database: 'disconnected',
+      error: error.message
+    });
+  }
 });
 
 // API Routes
@@ -96,18 +113,22 @@ const server = app.listen(PORT, () => {
 });
 
 // Graceful Shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   logger.info('SIGTERM signal received: closing HTTP server');
-  server.close(() => {
+  server.close(async () => {
     logger.info('HTTP server closed');
+    const { closeDatabase } = require('./config/database');
+    await closeDatabase();
     process.exit(0);
   });
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   logger.info('SIGINT signal received: closing HTTP server');
-  server.close(() => {
+  server.close(async () => {
     logger.info('HTTP server closed');
+    const { closeDatabase } = require('./config/database');
+    await closeDatabase();
     process.exit(0);
   });
 });

@@ -105,8 +105,13 @@ export const getErrorMessage = (error: unknown): string => {
   let message = 'An unexpected error occurred';
 
   if (axios.isAxiosError(error)) {
-    const apiError = error.response?.data as ApiError | undefined;
-    message = apiError?.message || error.message;
+    // Network error (backend not running)
+    if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+      message = 'Unable to connect to server. Please ensure the backend is running on port 3000.';
+    } else {
+      const apiError = error.response?.data as ApiError | undefined;
+      message = apiError?.message || error.message;
+    }
   } else if (error instanceof Error) {
     message = error.message;
   }

@@ -18,6 +18,7 @@ import { CardsList, AddCard } from './components/Cards';
 import { ProfileSettings } from './components/ProfileSettings';
 import { Notifications } from './components/Notifications';
 import { Invoices } from './components/Invoices';
+import { Layout } from './components/Layout';
 import { Loading } from './components/common';
 import './App.css';
 
@@ -66,7 +67,9 @@ function App() {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <Layout>
+                  <Dashboard />
+                </Layout>
               </ProtectedRoute>
             }
           />
@@ -74,7 +77,9 @@ function App() {
             path="/transactions"
             element={
               <ProtectedRoute>
-                <TransactionsList />
+                <Layout>
+                  <TransactionsList />
+                </Layout>
               </ProtectedRoute>
             }
           />
@@ -82,7 +87,9 @@ function App() {
             path="/transactions/new"
             element={
               <ProtectedRoute>
-                <NewTransaction />
+                <Layout>
+                  <NewTransaction />
+                </Layout>
               </ProtectedRoute>
             }
           />
@@ -90,7 +97,9 @@ function App() {
             path="/transactions/:id"
             element={
               <ProtectedRoute>
-                <TransactionDetail />
+                <Layout>
+                  <TransactionDetail />
+                </Layout>
               </ProtectedRoute>
             }
           />
@@ -98,7 +107,9 @@ function App() {
             path="/cards"
             element={
               <ProtectedRoute>
-                <CardsList />
+                <Layout>
+                  <CardsList />
+                </Layout>
               </ProtectedRoute>
             }
           />
@@ -106,7 +117,9 @@ function App() {
             path="/cards/add"
             element={
               <ProtectedRoute>
-                <AddCard />
+                <Layout>
+                  <AddCard />
+                </Layout>
               </ProtectedRoute>
             }
           />
@@ -114,7 +127,9 @@ function App() {
             path="/profile"
             element={
               <ProtectedRoute>
-                <ProfileSettings />
+                <Layout>
+                  <ProfileSettings />
+                </Layout>
               </ProtectedRoute>
             }
           />
@@ -122,7 +137,9 @@ function App() {
             path="/notifications"
             element={
               <ProtectedRoute>
-                <Notifications />
+                <Layout>
+                  <Notifications />
+                </Layout>
               </ProtectedRoute>
             }
           />
@@ -130,7 +147,9 @@ function App() {
             path="/invoices"
             element={
               <ProtectedRoute>
-                <Invoices />
+                <Layout>
+                  <Invoices />
+                </Layout>
               </ProtectedRoute>
             }
           />

@@ -19,14 +19,17 @@ module.exports = async(req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Get user from database
-    const user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(decoded.id);
 
     if (!user) {
       return res.status(401).json({ message: 'Token is not valid' });
     }
 
+    // Remove password from user object before attaching to request
+    const userWithoutPassword = user.toJSON();
+
     // Attach user to request
-    req.user = user;
+    req.user = userWithoutPassword;
     next();
 
   } catch (error) {

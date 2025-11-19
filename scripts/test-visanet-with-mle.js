@@ -28,16 +28,16 @@ function log(message, color = colors.reset) {
 async function testAuthorizationWithMLE() {
   log('\n🔐 VisaNet Connect Authorization Test with MLE Encryption\n', colors.blue);
 
-  // Check MLE configuration
-  const mleConfig = mle.verifyConfiguration();
+  // Check MLE configuration for VisaNet
+  const mleConfig = mle.verifyConfiguration('visaNet');
   if (mleConfig.configured) {
     log('✅ MLE is configured and ready', colors.green);
-    log(`   Key ID: ${mleConfig.keyId}`, colors.cyan);
+    log(`   Key ID: ${mleConfig.keyId ? 'Set' : 'Not Set'}`, colors.cyan);
     log(`   Encryption: ${mleConfig.encryptionType || 'RSA-OAEP-SHA256'}`, colors.cyan);
   } else {
     log('⚠️  MLE is NOT configured - card data will be sent in plain text', colors.yellow);
     log('   This is NOT recommended for production!', colors.yellow);
-    if (mleConfig.errors.length > 0) {
+    if (mleConfig.errors && mleConfig.errors.length > 0) {
       log('\n   Configuration errors:', colors.yellow);
       mleConfig.errors.forEach(err => log(`     - ${err}`, colors.yellow));
     }

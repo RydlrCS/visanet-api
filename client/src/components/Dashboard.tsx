@@ -42,6 +42,60 @@ export const Dashboard: React.FC = () => {
       setError('');
 
       try {
+        // Check if mock mode is enabled
+        const enableMockAuth = import.meta.env.VITE_ENABLE_MOCK_AUTH === 'true';
+        
+        if (enableMockAuth) {
+          // Use mock data for UI testing
+          logger.info('Dashboard', 'Using mock dashboard data');
+          setTimeout(() => {
+            const mockStats: DashboardStats = {
+              totalTransactions: 156,
+              successfulTransactions: 142,
+              failedTransactions: 8,
+              pendingTransactions: 6,
+              totalVolume: 245680.50,
+              todayVolume: 12450.00,
+              recentTransactions: [
+                {
+                  _id: '1',
+                  userId: '1',
+                  type: 'push',
+                  amount: 1250.00,
+                  currency: 'USD',
+                  status: 'completed',
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                },
+                {
+                  _id: '2',
+                  userId: '1',
+                  type: 'pull',
+                  amount: 850.00,
+                  currency: 'USD',
+                  status: 'completed',
+                  createdAt: new Date(Date.now() - 3600000).toISOString(),
+                  updatedAt: new Date(Date.now() - 3600000).toISOString(),
+                },
+                {
+                  _id: '3',
+                  userId: '1',
+                  type: 'push',
+                  amount: 2100.00,
+                  currency: 'USD',
+                  status: 'pending',
+                  createdAt: new Date(Date.now() - 7200000).toISOString(),
+                  updatedAt: new Date(Date.now() - 7200000).toISOString(),
+                },
+              ],
+            };
+            setStats(mockStats);
+            setLoading(false);
+          }, 300);
+          return;
+        }
+
+        // Real API call
         const response = await apiClient.get<DashboardStats>('/dashboard/stats');
         setStats(response.data);
         logger.info('Dashboard', 'Stats loaded successfully', {
